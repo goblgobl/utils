@@ -11,8 +11,8 @@ import (
 
 /*
 TODO:
-These tests mutate the gobl_migrations table, which
-can cause some issue during local development of other gobl projects.
+These tests mutate the goblgobl_migrations table, which
+can cause some issue during local development.
 We should just change the code so that the migration can receive a tx
 which would allow us to run these tests within a tx and rollback
 
@@ -27,7 +27,7 @@ func Test_MigrateAll_NormalRun(t *testing.T) {
 
 	bg := context.Background()
 	db.Exec(bg, "drop table if exists test_migrations")
-	db.Exec(bg, "drop table if exists gobl_migrations")
+	db.Exec(bg, "drop table if exists goblgobl_migrations")
 	migrateTest := func(appName string) {
 		err := MigrateAll(db, appName, []Migration{
 			Migration{1, MigrateOne},
@@ -40,7 +40,7 @@ func Test_MigrateAll_NormalRun(t *testing.T) {
 		assert.Equal(t, value, 9001)
 
 		var version int
-		rows, _ := db.Query(bg, "select version from gobl_migrations order by version")
+		rows, _ := db.Query(bg, "select version from goblgobl_migrations order by version")
 		defer rows.Close()
 
 		rows.Next()
@@ -70,7 +70,7 @@ func Test_MigrateAll_Error(t *testing.T) {
 
 	bg := context.Background()
 	db.Exec(bg, "drop table if exists test_migrations")
-	db.Exec(bg, "drop table if exists gobl_migrations")
+	db.Exec(bg, "drop table if exists goblgobl_migrations")
 	migrateTest := func(appName string) {
 		err := MigrateAll(db, appName, []Migration{
 			Migration{1, MigrateOne},
@@ -84,7 +84,7 @@ func Test_MigrateAll_Error(t *testing.T) {
 		assert.Equal(t, value, 9001)
 
 		var version int
-		rows, _ := db.Query(bg, "select version from gobl_migrations order by version")
+		rows, _ := db.Query(bg, "select version from goblgobl_migrations order by version")
 		defer rows.Close()
 
 		rows.Next()
@@ -118,9 +118,9 @@ func MigrateErr(tx pgx.Tx) error {
 }
 
 func testGetRealMigrations() map[string]int {
-	rows, err := db.Query(context.Background(), "select app, version from gobl_migrations")
+	rows, err := db.Query(context.Background(), "select app, version from goblgobl_migrations")
 	if err != nil {
-		if strings.Contains(err.Error(), `relation "gobl_migrations" does not exist`) {
+		if strings.Contains(err.Error(), `relation "goblgobl_migrations" does not exist`) {
 			return nil
 		}
 		panic(err)
@@ -140,7 +140,7 @@ func testGetRealMigrations() map[string]int {
 func testRestoreRealMigrations(migrations map[string]int) {
 	for app, version := range migrations {
 		_, err := db.Exec(context.Background(), `
-			insert into gobl_migrations (app, version)
+			insert into goblgobl_migrations (app, version)
 			values ($1, $2)
 			on conflict do nothing
 		`, app, version)

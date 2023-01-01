@@ -78,7 +78,7 @@ func Test_Bool(t *testing.T) {
 }
 
 func Test_Int(t *testing.T) {
-	typed := New(build("port", 84, "string", "30", "i16", int16(1), "i32", int32(2), "i64", int64(3), "f64", float64(4), "number", json.Number("5"), "nope", true))
+	typed := New(build("port", 84, "string", "30", "i16", int16(1), "i32", int32(2), "i64", int64(3), "f64", float64(4), "number", json.Number("5"), "nope", true, "decimal", 3.1))
 	assert.Equal(t, typed.Int("port"), 84)
 	assert.Equal(t, typed.IntOr("port", 11), 84)
 	value, exists := typed.IntIf("port")
@@ -101,6 +101,10 @@ func Test_Int(t *testing.T) {
 	assert.Equal(t, value, 0)
 	assert.False(t, exists)
 
+	value, exists = typed.IntIf("decimal")
+	assert.Equal(t, value, 0)
+	assert.False(t, exists)
+
 	assert.Equal(t, typed.Int("i16"), 1)
 	assert.Equal(t, typed.Int("i32"), 2)
 	assert.Equal(t, typed.Int("i64"), 3)
@@ -114,7 +118,8 @@ func Test_Int(t *testing.T) {
 }
 
 func Test_Float(t *testing.T) {
-	typed := New(build("pi", 3.14, "string", "30.14", "nope", true))
+	typed := New(build("pi", 3.14, "string", "30.14", "nope", true, "int", 33))
+	assert.Equal(t, typed.Float("int"), 33)
 	assert.Equal(t, typed.Float("pi"), 3.14)
 	assert.Equal(t, typed.FloatOr("pi", 11.3), 3.14)
 	value, exists := typed.FloatIf("pi")
@@ -223,24 +228,54 @@ func Test_ObjectType(t *testing.T) {
 	assert.Equal(t, typed.Object("server").Int("port"), 32)
 }
 
-func Test_Interface(t *testing.T) {
+func Test_Any(t *testing.T) {
 	typed := New(build("host", "localhost"))
-	assert.Equal(t, typed.Interface("host").(string), "localhost")
-	assert.Equal(t, typed.InterfaceOr("host", "openmymind.net").(string), "localhost")
-	value, exists := typed.InterfaceIf("host")
+	assert.Equal(t, typed.Any("host").(string), "localhost")
+	assert.Equal(t, typed.AnyOr("host", "openmymind.net").(string), "localhost")
+	value, exists := typed.AnyIf("host")
 	assert.Equal(t, value.(string), "localhost")
 	assert.True(t, exists)
 
-	assert.Nil(t, typed.Interface("other"))
-	assert.Equal(t, typed.InterfaceOr("other", "openmymind.net").(string), "openmymind.net")
-	value, exists = typed.InterfaceIf("other")
+	assert.Nil(t, typed.Any("other"))
+	assert.Equal(t, typed.AnyOr("other", "openmymind.net").(string), "openmymind.net")
+	value, exists = typed.AnyIf("other")
 	assert.Nil(t, value)
 	assert.False(t, exists)
 
-	assert.Equal(t, typed.InterfaceMust("host").(string), "localhost")
+	assert.Equal(t, typed.AnyMust("host").(string), "localhost")
 
-	defer mustTest(t, "expected map for fail")
-	typed.InterfaceMust("fail")
+	defer mustTest(t, "expected any for fail")
+	typed.AnyMust("fail")
+	t.FailNow()
+}
+
+func Test_Anys(t *testing.T) {
+	typed := New(build("input", []any{"a", "b"}))
+	a, exists := typed.AnysIf("x")
+	assert.False(t, exists)
+	assert.Equal(t, len(a), 0)
+
+	a = typed.Anys("x")
+	assert.Equal(t, len(a), 0)
+
+	a, exists = typed.AnysIf("input")
+	assert.True(t, exists)
+	assert.Equal(t, a[0].(string), "a")
+	assert.Equal(t, a[1].(string), "b")
+
+	a = typed.Anys("input")
+	assert.Equal(t, a[0].(string), "a")
+	assert.Equal(t, a[1].(string), "b")
+
+	a = typed.AnysOr("x", []any{"zz"})
+	assert.Equal(t, a[0].(string), "zz")
+
+	a = typed.AnysOr("input", []any{"zz"})
+	assert.Equal(t, a[0].(string), "a")
+	assert.Equal(t, a[1].(string), "b")
+
+	defer mustTest(t, "expected array of anys for fail")
+	typed.AnysMust("fail")
 	t.FailNow()
 }
 
@@ -603,6 +638,7 @@ func build(values ...any) map[string]any {
 }
 
 func mustTest(t *testing.T, expected string) {
+	t.Helper()
 	if err := recover(); err != nil {
 		switch e := err.(type) {
 		case string:

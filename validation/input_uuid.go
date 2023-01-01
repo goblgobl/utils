@@ -6,66 +6,67 @@ import (
 	"src.goblgobl.com/utils/uuid"
 )
 
-func UUID(field string) *InputUUID {
-	return &InputUUID{
-		field:       field,
-		errType:     inputError(field, InvalidUUIDType, nil),
-		errRequired: inputError(field, Required, nil),
+func UUID() *UUIDValidator {
+	return &UUIDValidator{
+		errReq:  Required(),
+		errType: InvalidUUIDType(),
 	}
 }
 
-type InputUUID struct {
-	field       string
-	dflt        string
-	required    bool
-	errType     InvalidField
-	errRequired InvalidField
+type UUIDValidator struct {
+	field    Field
+	dflt     string
+	required bool
+	errReq   Invalid
+	errType  Invalid
 }
 
-func (i *InputUUID) argsToTyped(args *fasthttp.Args, t typed.Typed) {
-	field := i.field
-	if value := args.Peek(field); value != nil {
-		t[field] = string(value)
+func (v *UUIDValidator) argsToTyped(args *fasthttp.Args, t typed.Typed) {
+	fieldName := v.field.Name
+	if value := args.Peek(fieldName); value != nil {
+		t[fieldName] = string(value)
 	}
 }
 
-func (i *InputUUID) Clone(field string) *InputUUID {
-	return &InputUUID{
-		field:       field,
-		dflt:        i.dflt,
-		required:    i.required,
-		errType:     inputError(field, InvalidUUIDType, nil),
-		errRequired: inputError(field, Required, nil),
-	}
-}
+func (v *UUIDValidator) validate(object typed.Typed, input typed.Typed, res *Result) {
+	field := v.field
+	fieldName := field.Name
 
-func (i *InputUUID) validate(input typed.Typed, res *Result) {
-	field := i.field
-	value, exists := input.StringIf(field)
-
+	value, exists := object.StringIf(fieldName)
 	if !exists {
-		if _, exists = input[field]; !exists && i.required {
-			res.add(i.errRequired)
+		if _, exists = object[fieldName]; !exists && v.required {
+			res.AddInvalidField(field, v.errReq)
 		} else if exists {
-			res.add(i.errType)
+			res.AddInvalidField(field, v.errType)
 		}
-		if dflt := i.dflt; dflt != "" {
-			input[field] = dflt
+		if dflt := v.dflt; dflt != "" {
+			object[fieldName] = dflt
 		}
 		return
 	}
 
 	if !uuid.IsValid(value) {
-		res.add(i.errType)
+		res.AddInvalidField(field, v.errType)
 	}
 }
 
-func (i *InputUUID) Required() *InputUUID {
-	i.required = true
-	return i
+func (v *UUIDValidator) addField(fieldName string) InputValidator {
+	field := v.field.add(fieldName)
+	return &UUIDValidator{
+		field:    field,
+		dflt:     v.dflt,
+		required: v.required,
+		errReq:   v.errReq,
+		errType:  v.errType,
+	}
 }
 
-func (i *InputUUID) Default(value string) *InputUUID {
-	i.dflt = value
-	return i
+func (v *UUIDValidator) Required() *UUIDValidator {
+	v.required = true
+	return v
+}
+
+func (v *UUIDValidator) Default(value string) *UUIDValidator {
+	v.dflt = value
+	return v
 }

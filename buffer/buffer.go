@@ -9,10 +9,10 @@ import (
 
 /*
 A wrapper around a []byte with helper methods for writing.
-The buffer is also optionally pool-aware and satifies io.Reader
+The buffer is also optionally pool-aware and satisfies io.Reader
 and io.Closer interfaces.
 
-While it's general-purpose, the main goal is to interact with
+While it's general-purpose, a goal is to interact with
 fasthttp's Response.SetBodyStream to optimize how data is
 written to a response.
 
@@ -52,6 +52,10 @@ type Buffer struct {
 	// active buffer to read/write from. Will either reference
 	// data or a dynamically allocated larger space (up to max size)
 	data []byte
+
+	// could be nil (if created outside of the pool, or if the pool
+	// was empty and created it on the fly)
+	pool *Pool
 }
 
 func New(min uint32, max uint32) *Buffer {
@@ -67,6 +71,13 @@ func (b *Buffer) Reset() {
 	b.pos = 0
 	b.err = nil
 	b.data = b.static
+}
+
+func (b *Buffer) Release() {
+	if pool := b.pool; pool != nil {
+		b.Reset()
+		pool.list <- b
+	}
 }
 
 func (b *Buffer) Len() int {
@@ -98,6 +109,13 @@ func (b Buffer) Bytes() ([]byte, error) {
 	return b.data[:b.pos], b.err
 }
 
+// optimization for passing the result to the ExecTerminated
+// method of sqlite.Conn.
+func (b Buffer) SqliteBytes() ([]byte, error) {
+	b.WriteByte('\x00')
+	return b.data[:b.pos], b.err
+}
+
 // Write and ensure enough capacity for len(data) + padSize
 // Meant to be used with WriteByteUnsafe.
 func (b *Buffer) WritePad(data []byte, padSize int) {
@@ -116,6 +134,10 @@ func (b *Buffer) Write(data []byte) {
 
 func (b *Buffer) WriteUnsafe(data string) {
 	b.Write(utils.S2B(data))
+}
+
+func (b *Buffer) WriteString(data string) {
+	b.Write([]byte(data))
 }
 
 func (b *Buffer) WriteByte(byte byte) {

@@ -25,8 +25,8 @@ func (p *Pool) Len() int {
 
 func (p *Pool) Checkout() *Result {
 	select {
-	case logger := <-p.list:
-		return logger
+	case result := <-p.list:
+		return result
 	default:
 		atomic.AddUint64(&p.depleted, 1)
 		return NewResult(p.maxErrors)

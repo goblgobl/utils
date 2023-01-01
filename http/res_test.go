@@ -84,11 +84,12 @@ func Test_ServerError(t *testing.T) {
 }
 
 func Test_Validation(t *testing.T) {
+	rules := validation.Object().
+		Field("field1", validation.String().Required()).
+		Field("field2", validation.Int().Min(10))
+
 	result := validation.NewResult(5)
-	result.InvalidField("field1", validation.Required, nil)
-	result.InvalidField("field2", validation.Required, 331)
-	result.Invalid(validation.InvalidStringType, nil)
-	result.Invalid(validation.InvalidStringType, map[string]any{"over": 9000})
+	rules.Validate(map[string]any{"over": 9000, "field2": 3}, result)
 
 	res := read(Validation(result))
 	assert.Equal(t, res.status, 400)
@@ -96,28 +97,18 @@ func Test_Validation(t *testing.T) {
 	assert.Equal(t, res.json.String("error"), "invalid data")
 
 	invalid := res.json.Objects("invalid")
-	assert.Equal(t, len(invalid), 4)
+	assert.Equal(t, len(invalid), 2)
 	assert.Equal(t, invalid[0].Int("code"), 1001)
 	assert.Equal(t, invalid[0].String("field"), "field1")
 	assert.Equal(t, invalid[0].String("error"), "required")
 	assert.Nil(t, invalid[0].Object("data"))
 
-	assert.Equal(t, invalid[1].Int("code"), 1001)
+	assert.Equal(t, invalid[1].Int("code"), 1006)
 	assert.Equal(t, invalid[1].String("field"), "field2")
-	assert.Equal(t, invalid[1].String("error"), "required")
-	assert.Equal(t, invalid[1].Int("data"), 331)
+	assert.Equal(t, invalid[1].String("error"), "must be greater or equal to 10")
+	assert.Equal(t, invalid[1].Object("data").Int("min"), 10)
 
-	assert.Equal(t, invalid[2].Int("code"), 1002)
-	assert.Equal(t, invalid[2].String("field"), "")
-	assert.Equal(t, invalid[2].String("error"), "must be a string")
-	assert.Nil(t, invalid[2].Object("data"))
-
-	assert.Equal(t, invalid[3].Int("code"), 1002)
-	assert.Equal(t, invalid[3].String("field"), "")
-	assert.Equal(t, invalid[3].String("error"), "must be a string")
-	assert.Equal(t, invalid[3].Object("data").Int("over"), 9000)
-
-	assert.Equal(t, res.log["res"], "262")
+	assert.Equal(t, res.log["res"], "200")
 	assert.Equal(t, res.log["code"], "2004")
 	assert.Equal(t, res.log["status"], "400")
 }

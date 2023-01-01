@@ -163,7 +163,11 @@ func (t Typed) IntIf(key string) (int, bool) {
 	case int64:
 		return int(t), true
 	case float64:
-		return int(t), true
+		nt := int(t)
+		if t == float64(nt) {
+			return nt, true
+		}
+		return 0, false
 	case string:
 		i, err := strconv.Atoi(t)
 		return i, err == nil
@@ -203,6 +207,8 @@ func (t Typed) FloatIf(key string) (float64, bool) {
 	switch t := value.(type) {
 	case float64:
 		return t, true
+	case int:
+		return float64(t), true
 	case string:
 		f, err := strconv.ParseFloat(t, 10)
 		return f, err == nil
@@ -376,32 +382,64 @@ func (t Typed) ObjectIf(key string) (Typed, bool) {
 	return nil, false
 }
 
-func (t Typed) Interface(key string) any {
-	return t.InterfaceOr(key, nil)
+func (t Typed) Any(key string) any {
+	return t.AnyOr(key, nil)
 }
 
 // Returns a string at the key, or the specified
 // value if it doesn't exist or isn't a strin
-func (t Typed) InterfaceOr(key string, d any) any {
-	if value, exists := t.InterfaceIf(key); exists {
+func (t Typed) AnyOr(key string, d any) any {
+	if value, exists := t.AnyIf(key); exists {
 		return value
 	}
 	return d
 }
 
 // Returns an interface or panics
-func (t Typed) InterfaceMust(key string) any {
-	i, exists := t.InterfaceIf(key)
+func (t Typed) AnyMust(key string) any {
+	i, exists := t.AnyIf(key)
 	if exists == false {
-		panic("expected map for " + key)
+		panic("expected any for " + key)
 	}
 	return i
 }
 
 // Returns an string at the key and whether
 // or not the key existed and the value was an string
-func (t Typed) InterfaceIf(key string) (any, bool) {
+func (t Typed) AnyIf(key string) (any, bool) {
 	value, exists := t[key]
+	if exists == false {
+		return nil, false
+	}
+	return value, true
+}
+
+func (t Typed) Anys(key string) []any {
+	return t.AnysOr(key, nil)
+}
+
+// Returns a string at the key, or the specified
+// value if it doesn't exist or isn't a strin
+func (t Typed) AnysOr(key string, d []any) []any {
+	if value, exists := t.AnysIf(key); exists {
+		return value
+	}
+	return d
+}
+
+// Returns an interface or panics
+func (t Typed) AnysMust(key string) []any {
+	i, exists := t.AnysIf(key)
+	if exists == false {
+		panic("expected array of anys for " + key)
+	}
+	return i
+}
+
+// Returns an string at the key and whether
+// or not the key existed and the value was an string
+func (t Typed) AnysIf(key string) ([]any, bool) {
+	value, exists := t[key].([]any)
 	if exists == false {
 		return nil, false
 	}

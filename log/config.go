@@ -22,11 +22,11 @@ func Configure(config Config) error {
 	levelName := strings.ToUpper(config.Level)
 
 	switch levelName {
-	case "", "INFO":
+	case "INFO":
 		level = INFO
-		levelName = "INFO" // reset this incase it was empty/default
-	case "WARN":
+	case "", "WARN":
 		level = WARN
+		levelName = "WARN" // reset this incase it was empty/default
 	case "ERROR":
 		level = ERROR
 	case "FATAL":

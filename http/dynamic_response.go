@@ -80,7 +80,6 @@ func Ok(data any) Response {
 		}
 	}
 	return OkBytes(body)
-
 }
 
 func OkBytes(body []byte) DynamicResponse {

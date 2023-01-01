@@ -7,180 +7,203 @@ import (
 	"src.goblgobl.com/utils/typed"
 )
 
-type StringValidator interface {
-	Clone(field string) StringValidator
-	Validate(value string, rest typed.Typed, res *Result) string
+type StringRule interface {
+	clone() StringRule
+	Validate(field Field, value string, object typed.Typed, input typed.Typed, res *Result) string
 }
 
-type StringConverter func(field string, value string, input typed.Typed, res *Result) any
-type StringFuncValidator func(field string, value string, input typed.Typed, res *Result) string
+type StringConverter func(field Field, value string, object typed.Typed, input typed.Typed, res *Result) any
+type StringFuncValidator func(field Field, value string, object typed.Typed, input typed.Typed, res *Result) string
 
-func String(field string) *InputString {
-	return &InputString{
-		field:       field,
-		errType:     inputError(field, InvalidStringType, nil),
-		errRequired: inputError(field, Required, nil),
+func String() *StringValidator {
+	return &StringValidator{
+		errReq:  Required(),
+		errType: InvalidStringType(),
 	}
 }
 
-type InputString struct {
-	field       string
-	dflt        string
-	required    bool
-	converter   StringConverter
-	validators  []StringValidator
-	errType     InvalidField
-	errRequired InvalidField
+type StringValidator struct {
+	field     Field
+	dflt      string
+	required  bool
+	converter StringConverter
+	rules     []StringRule
+	errReq    Invalid
+	errType   Invalid
 }
 
-func (i *InputString) argsToTyped(args *fasthttp.Args, t typed.Typed) {
-	field := i.field
-	if value := args.Peek(field); value != nil {
-		t[field] = string(value)
+func (v *StringValidator) argsToTyped(args *fasthttp.Args, t typed.Typed) {
+	fieldName := v.field.Name
+	if value := args.Peek(fieldName); value != nil {
+		t[fieldName] = string(value)
 	}
 }
 
-func (i *InputString) Clone(field string) *InputString {
-	validators := make([]StringValidator, len(i.validators))
-	for i, validator := range i.validators {
-		validators[i] = validator.Clone(field)
-	}
+func (v *StringValidator) validate(object typed.Typed, input typed.Typed, res *Result) {
+	field := v.field
+	fieldName := field.Name
 
-	return &InputString{
-		field:       field,
-		dflt:        i.dflt,
-		required:    i.required,
-		converter:   i.converter,
-		validators:  validators,
-		errType:     inputError(field, InvalidStringType, nil),
-		errRequired: inputError(field, Required, nil),
-	}
-}
-
-func (i *InputString) validate(input typed.Typed, res *Result) {
-	field := i.field
-	value, exists := input.StringIf(field)
-
+	value, exists := object.StringIf(fieldName)
 	if !exists {
-		if _, exists = input[field]; !exists && i.required {
-			res.add(i.errRequired)
+		if _, exists = object[fieldName]; !exists && v.required {
+			res.AddInvalidField(field, v.errReq)
 		} else if exists {
-			res.add(i.errType)
+			res.AddInvalidField(field, v.errType)
 		}
-		if dflt := i.dflt; dflt != "" {
-			input[field] = dflt
+		if dflt := v.dflt; dflt != "" {
+			object[fieldName] = dflt
 		}
 		return
 	}
 
-	for _, validator := range i.validators {
-		value = validator.Validate(value, input, res)
+	for _, rule := range v.rules {
+		value = rule.Validate(field, value, object, input, res)
 	}
 
-	if converter := i.converter; converter != nil {
-		input[field] = converter(field, value, input, res)
+	if converter := v.converter; converter != nil {
+		object[fieldName] = converter(field, value, object, input, res)
 	} else {
-		input[field] = value
+		object[fieldName] = value
 	}
 }
 
-func (i *InputString) Required() *InputString {
-	i.required = true
-	return i
+func (v *StringValidator) addField(fieldName string) InputValidator {
+	field := v.field.add(fieldName)
+
+	rules := make([]StringRule, len(v.rules))
+	for i, rule := range v.rules {
+		rules[i] = rule.clone()
+	}
+
+	return &StringValidator{
+		field:     field,
+		dflt:      v.dflt,
+		required:  v.required,
+		converter: v.converter,
+		rules:     rules,
+		errReq:    v.errReq,
+		errType:   v.errType,
+	}
 }
 
-func (i *InputString) Default(value string) *InputString {
-	i.dflt = value
-	return i
+func (v *StringValidator) Required() *StringValidator {
+	v.required = true
+	return v
 }
 
-func (i *InputString) Length(min int, max int) *InputString {
-	i.validators = append(i.validators, newStringLen(i.field, min, max))
-	return i
+func (v *StringValidator) Default(value string) *StringValidator {
+	v.dflt = value
+	return v
 }
 
-func (i *InputString) Pattern(pattern string) *InputString {
-	re := regexp.MustCompile(pattern)
-	i.validators = append(i.validators, newStringPattern(i.field, re))
-	return i
+func (v *StringValidator) Choice(valid ...string) *StringValidator {
+	v.rules = append(v.rules, StringChoice{
+		valid: valid,
+		err:   InvalidStringChoice(valid),
+	})
+	return v
 }
 
-func (i *InputString) Func(fn StringFuncValidator) *InputString {
-	i.validators = append(i.validators, newStringFunc(i.field, fn))
-	return i
+func (v *StringValidator) Length(min int, max int) *StringValidator {
+	v.rules = append(v.rules, StringLen{
+		min: min,
+		max: max,
+		err: InvalidStringLength(min, max),
+	})
+	return v
 }
 
-func (i *InputString) Convert(fn StringConverter) *InputString {
-	i.converter = fn
-	return i
+func (v *StringValidator) Pattern(pattern string, errorMessage ...string) *StringValidator {
+	v.rules = append(v.rules, StringPattern{
+		pattern: regexp.MustCompile(pattern),
+		err:     InvalidStringPattern(errorMessage...),
+	})
+	return v
+}
+
+func (v *StringValidator) Func(fn StringFuncValidator) *StringValidator {
+	v.rules = append(v.rules, StringFunc{fn})
+	return v
+}
+
+func (v *StringValidator) Convert(fn StringConverter) *StringValidator {
+	v.converter = fn
+	return v
 }
 
 type StringLen struct {
 	min int
 	max int
-	err InvalidField
+	err Invalid
 }
 
-func newStringLen(field string, min int, max int) StringLen {
-	return StringLen{
-		min: min,
-		max: max,
-		err: inputError(field, InvalidStringLength, Range(min, max), min, max),
+func (r StringLen) Validate(field Field, value string, object typed.Typed, input typed.Typed, res *Result) string {
+	if min := r.min; min > 0 && len(value) < min {
+		res.AddInvalidField(field, r.err)
 	}
-}
-
-func (v StringLen) Clone(field string) StringValidator {
-	return newStringLen(field, v.min, v.max)
-}
-
-func (v StringLen) Validate(value string, rest typed.Typed, res *Result) string {
-	if min := v.min; min > 0 && len(value) < min {
-		res.add(v.err)
-	}
-	if max := v.max; max > 0 && len(value) > max {
-		res.add(v.err)
+	if max := r.max; max > 0 && len(value) > max {
+		res.AddInvalidField(field, r.err)
 	}
 	return value
+}
+
+func (r StringLen) clone() StringRule {
+	return StringLen{
+		min: r.min,
+		max: r.max,
+		err: r.err,
+	}
 }
 
 type StringPattern struct {
 	pattern *regexp.Regexp
-	err     InvalidField
+	err     Invalid
 }
 
-func newStringPattern(field string, pattern *regexp.Regexp) StringPattern {
-	return StringPattern{
-		pattern: pattern,
-		err:     inputError(field, InvalidStringPattern, nil),
-	}
-}
-
-func (v StringPattern) Clone(field string) StringValidator {
-	return newStringPattern(field, v.pattern)
-}
-
-func (v StringPattern) Validate(value string, rest typed.Typed, res *Result) string {
-	if !v.pattern.MatchString(value) {
-		res.add(v.err)
+func (r StringPattern) Validate(field Field, value string, object typed.Typed, input typed.Typed, res *Result) string {
+	if !r.pattern.MatchString(value) {
+		res.AddInvalidField(field, r.err)
 	}
 	return value
 }
 
-type StringFunc struct {
-	field string
-	fn    func(string, string, typed.Typed, *Result) string
-}
-
-func newStringFunc(field string, fn StringFuncValidator) StringFunc {
-	return StringFunc{
-		fn:    fn,
-		field: field,
+func (r StringPattern) clone() StringRule {
+	return StringPattern{
+		pattern: r.pattern,
+		err:     r.err,
 	}
 }
-func (v StringFunc) Clone(field string) StringValidator {
-	return newStringFunc(field, v.fn)
+
+type StringChoice struct {
+	valid []string
+	err   Invalid
 }
 
-func (v StringFunc) Validate(value string, rest typed.Typed, res *Result) string {
-	return v.fn(v.field, value, rest, res)
+func (r StringChoice) Validate(field Field, value string, object typed.Typed, input typed.Typed, res *Result) string {
+	for _, valid := range r.valid {
+		if value == valid {
+			return value
+		}
+	}
+	res.AddInvalidField(field, r.err)
+	return value
+}
+
+func (r StringChoice) clone() StringRule {
+	return StringChoice{
+		valid: r.valid,
+		err:   r.err,
+	}
+}
+
+type StringFunc struct {
+	fn StringFuncValidator
+}
+
+func (r StringFunc) Validate(field Field, value string, object typed.Typed, input typed.Typed, res *Result) string {
+	return r.fn(field, value, object, input, res)
+}
+
+func (r StringFunc) clone() StringRule {
+	return r
 }

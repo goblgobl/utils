@@ -4,15 +4,14 @@ import (
 	"testing"
 
 	"src.goblgobl.com/tests/assert"
-	"src.goblgobl.com/utils/json"
-	"src.goblgobl.com/utils/typed"
 )
 
-func Test_Result_InvalidField_NoData(t *testing.T) {
+func Test_Result_FieldError_NoData(t *testing.T) {
 	r := NewResult(4)
 	assert.True(t, r.IsValid())
 
-	r.InvalidField("field1", Required, nil)
+	f := Field{}
+	r.AddInvalidField(f.add("field1"), Required())
 	assert.False(t, r.IsValid())
 
 	invalid := r.Errors()[0].(InvalidField)
@@ -22,39 +21,36 @@ func Test_Result_InvalidField_NoData(t *testing.T) {
 	assert.Equal(t, invalid.Error, "required")
 }
 
-func Test_Result_InvalidField_Data(t *testing.T) {
+func Test_Result_FieldError_Data(t *testing.T) {
 	r := NewResult(4)
-	r.InvalidField("field1", InvalidStringType, 33)
+
+	f := Field{}
+	r.AddInvalidField(f.add("field2"), InvalidIntMin(33))
 	invalid := r.Errors()[0].(InvalidField)
-	assert.Equal(t, invalid.Data.(int), 33)
-	assert.Equal(t, invalid.Code, 1002)
-	assert.Equal(t, invalid.Field, "field1")
-	assert.Equal(t, invalid.Error, "must be a string")
+	assert.Equal(t, invalid.Data.(DataMin).Min.(int), 33)
+	assert.Equal(t, invalid.Code, 1006)
+	assert.Equal(t, invalid.Field, "field2")
+	assert.Equal(t, invalid.Error, "must be greater or equal to 33")
 }
 
-func Test_Result_Invalid_NoData(t *testing.T) {
+func Test_Result_NoField_NoData(t *testing.T) {
 	r := NewResult(4)
-	r.Invalid(InvalidStringPattern, nil)
+	assert.True(t, r.IsValid())
+
+	r.AddInvalid(Required())
+	assert.False(t, r.IsValid())
+
 	invalid := r.Errors()[0].(Invalid)
 	assert.Nil(t, invalid.Data)
-	assert.Equal(t, invalid.Code, 1004)
-	assert.Equal(t, invalid.Error, "is not valid")
+	assert.Equal(t, invalid.Code, 1001)
+	assert.Equal(t, invalid.Error, "required")
 }
 
-func Test_Result_Invalid_Range(t *testing.T) {
+func Test_Result_NoField_Data(t *testing.T) {
 	r := NewResult(4)
-	r.Invalid(InvalidStringLength, Range(5, 10))
+	r.AddInvalid(InvalidIntMin(33))
 	invalid := r.Errors()[0].(Invalid)
-	assert.Equal(t, invalid.Code, 1003)
-	assert.Equal(t, invalid.Data.(DataRange).Min.(int), 5)
-	assert.Equal(t, invalid.Data.(DataRange).Max.(int), 10)
-	assert.Equal(t, invalid.Error, "must be between %d and %d characters")
-}
-
-func serialize(r *Result) typed.Typed {
-	data, err := json.Marshal(r.Errors()[0])
-	if err != nil {
-		panic(err)
-	}
-	return typed.Must(data)
+	assert.Equal(t, invalid.Data.(DataMin).Min.(int), 33)
+	assert.Equal(t, invalid.Code, 1006)
+	assert.Equal(t, invalid.Error, "must be greater or equal to 33")
 }

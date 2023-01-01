@@ -36,7 +36,7 @@ func Handler[T Env](routeName string, loadEnv func(ctx *fasthttp.RequestCtx) (T,
 			if haveEnv {
 				logger = env.Info("req")
 			} else {
-				logger = log.Error("req")
+				logger = log.Info("req")
 			}
 		} else {
 			if haveEnv {

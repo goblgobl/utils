@@ -45,7 +45,7 @@ func Test_Buffer_Write_GrowFirst(t *testing.T) {
 func Test_Buffer_Write_Grow(t *testing.T) {
 	b := New(8, 20)
 	b.Write([]byte("hello"))
-	b.Write([]byte(" world"))
+	b.WriteString(" world")
 	assert.Equal(t, testMustString(b), "hello world")
 	assert.NotEqual(t, &b.data[0], &b.static[0])
 }
@@ -170,6 +170,21 @@ func Test_Buffer_Truncate(t *testing.T) {
 	assert.Equal(t, testMustString(b), "1")
 	b.Truncate(1)
 	assert.Equal(t, testMustString(b), "")
+}
+
+func Test_Buffer_SqliteBytes(t *testing.T) {
+	b := New(5, 20)
+	b.Write([]byte("up"))
+	sql, err := b.SqliteBytes()
+	assert.Nil(t, err)
+	assert.Equal(t, string(sql), "up\x00")
+
+	// terminator forces growth
+	b = New(5, 20)
+	b.Write([]byte("hello"))
+	sql, err = b.SqliteBytes()
+	assert.Nil(t, err)
+	assert.Equal(t, string(sql), "hello\x00")
 }
 
 func testMustString(b *Buffer) string {

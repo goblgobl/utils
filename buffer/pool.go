@@ -1,6 +1,50 @@
 package buffer
 
-import "sync"
+import (
+	"sync"
+	"sync/atomic"
+)
+
+type Pool struct {
+	minSize  uint32
+	maxSize  uint32
+	depleted uint64
+	list     chan *Buffer
+}
+
+func NewPoolFromConfig(config Config) *Pool {
+	return NewPool(config.Count, config.Min, config.Max)
+}
+
+func NewPool(count uint16, minSize uint32, maxSize uint32) *Pool {
+	list := make(chan *Buffer, count)
+	p := &Pool{list: list, minSize: minSize, maxSize: maxSize}
+	for i := uint16(0); i < count; i++ {
+		buffer := New(minSize, maxSize)
+		buffer.pool = p
+		list <- buffer
+	}
+	return p
+}
+
+func (p *Pool) Len() int {
+	return len(p.list)
+}
+
+func (p *Pool) Checkout(maxSize uint32) *Buffer {
+	select {
+	case buffer := <-p.list:
+		buffer.max = int(maxSize)
+		return buffer
+	default:
+		atomic.AddUint64(&p.depleted, 1)
+		return New(p.minSize, maxSize)
+	}
+}
+
+func (p *Pool) Depleted() uint64 {
+	return atomic.SwapUint64(&p.depleted, 0)
+}
 
 /*
 A lot of our object pools are encapsulated inside of project
@@ -33,6 +77,5 @@ func Checkout(maxSize int) *Buffer {
 }
 
 func Release(b *Buffer) {
-	b.Reset()
-	buffers.Put(b)
+
 }

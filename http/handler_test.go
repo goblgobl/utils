@@ -51,7 +51,7 @@ func Test_Handler_EnvLoader_Response(t *testing.T) {
 	})
 
 	reqLog := log.KvParse(logged)
-	assert.Equal(t, reqLog["l"], "error")
+	assert.Equal(t, reqLog["l"], "info")
 	assert.Equal(t, reqLog["code"], "60")
 
 	res := conn.Response

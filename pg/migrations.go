@@ -33,10 +33,10 @@ func MigrateAll(db DB, appName string, migrations []Migration) error {
 				return fmt.Errorf("Failed to run pg migration #%d - %w", version, err)
 			}
 
-			_, err = tx.Exec(context.Background(), `insert into gobl_migrations (app, version) values ($1, $2)`, appName, version)
+			_, err = tx.Exec(context.Background(), `insert into goblgobl_migrations (app, version) values ($1, $2)`, appName, version)
 
 			if err != nil {
-				return fmt.Errorf("pg insert into gobl_migrations - %w", err)
+				return fmt.Errorf("pg insert into goblgobl_migrations - %w", err)
 			}
 			return nil
 		})
@@ -54,14 +54,14 @@ func MigrateAll(db DB, appName string, migrations []Migration) error {
 }
 
 func GetCurrentMigrationVersion(db DB, appName string) (int, error) {
-	exists, err := db.TableExists("gobl_migrations")
+	exists, err := db.TableExists("goblgobl_migrations")
 	if err != nil {
 		return 0, err
 	}
 
 	if !exists {
 		_, err := db.Exec(context.Background(), `
-			create table gobl_migrations (
+			create table goblgobl_migrations (
 				app text not null,
 				version integer not null,
 				created timestamptz not null default now(),
@@ -69,14 +69,14 @@ func GetCurrentMigrationVersion(db DB, appName string) (int, error) {
 			)
 		`)
 		if err != nil {
-			return 0, fmt.Errorf("pg create gobl_migrations - %w", err)
+			return 0, fmt.Errorf("pg create goblgobl_migrations - %w", err)
 		}
 		return 0, nil
 	}
 
 	value, err := Scalar[*int](db, `
 		select max(version)
-		from gobl_migrations
+		from goblgobl_migrations
 		where app = $1
 	`, appName)
 
