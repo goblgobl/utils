@@ -52,15 +52,19 @@ func Test_Pool_Level(t *testing.T) {
 }
 
 func Test_Pool_Checkout(t *testing.T) {
-	p := NewPool(1, INFO, KvFactory(64), nil)
+	out := &strings.Builder{}
+	p := NewPool(1, WARN, KvFactory(64), nil)
 
-	l1 := p.Checkout().(*KvLogger)
-	l1.Release()
+	l1 := p.Checkout()
+	l1.Info("should not log").LogTo(out)
+	assert.Equal(t, out.String(), "")
 
-	l2 := p.Checkout().(*KvLogger)
-	l2.Release()
+	out.Reset()
+	l2 := p.Checkout()
+	l2.Warn("should log").LogTo(out)
+	assert.True(t, strings.Contains(out.String(), "should log"))
 
-	assert.Equal(t, l1, l2)
+	assert.Equal(t, l1.(*KvLogger), l2.(*KvLogger))
 }
 
 func Test_Pool_Depleted(t *testing.T) {

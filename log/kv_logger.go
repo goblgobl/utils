@@ -1,5 +1,29 @@
 package log
 
+/*
+Loggers generally come from a pool in one of three ways:
+1 - Call pool.Info/Warn/Error/Fatal and you'll get a logger from it.
+    In these cases, the pool will check the log level and
+    return a Noop logger if the level of the logged message < the configured log level
+
+2 - Call to pool.Checkout(). This is used with the MultiUse feature, where
+    we'll want to possibly write multiple message all including the same fields
+    (like a requestId). In such cases, the log level cannot be checked by the pool
+    (because the returned logger can be used multiple times to log different message levels).
+    Therefore the logger itself must check the level.
+
+In case #2, we only check the log level once per call (yay!). In case #2
+we check the log level twice: once in the pool and once again in the logger.
+We need to do the logger check to cover case #2. The first check _could_ be skipped
+without any change in behavior, but it would put higher contention and usage on our
+pool. That seems worth avoiding since it's reasonable to think most messages will be
+INFO and our configured level will be > INFO.
+
+3 - The 3rd way a logger come from the pool is when the pool is depleted and
+    we create a new logger just-in-time. This type of logger is only different
+    in that, on release, it isn't put back into the pool.
+*/
+
 import (
 	"io"
 	"strconv"
@@ -28,18 +52,21 @@ type KvLogger struct {
 	// After logging a message, pos == multiUseLen. Only
 	// on reset/release will pos == fixedLen
 	multiUseLen uint64
+
+	level Level
 }
 
-func NewKvLogger(maxSize uint32, pool *Pool) *KvLogger {
+func NewKvLogger(maxSize uint32, pool *Pool, level Level) *KvLogger {
 	return &KvLogger{
 		pool:   pool,
+		level:  level,
 		buffer: make([]byte, maxSize),
 	}
 }
 
 func KvFactory(maxSize uint32) Factory {
-	return func(pool *Pool) Logger {
-		return NewKvLogger(maxSize, pool)
+	return func(pool *Pool, level Level) Logger {
+		return NewKvLogger(maxSize, pool, level)
 	}
 }
 
@@ -111,9 +138,7 @@ func (l *KvLogger) LogTo(out io.Writer) {
 	// always be at least 1 space in our buffer
 	buffer[pos] = '\n'
 	out.Write(buffer[:pos+1])
-	if l.multiUseLen == 0 {
-		l.Release()
-	}
+	l.conditionalRelease()
 }
 
 func (l *KvLogger) Reset() {
@@ -127,23 +152,47 @@ func (l *KvLogger) Release() {
 	}
 }
 
-// Log an info-level message. Every message must have a [hopefully] unique context
+// Normally, logger is automatically released when Log or LogTo is called
+// unless we've enabled multiUse.
+func (l *KvLogger) conditionalRelease() {
+	if l.multiUseLen == 0 {
+		l.Release()
+	}
+}
+
+// Log an info-level message.
 func (l *KvLogger) Info(ctx string) Logger {
+	if l.level > INFO {
+		l.conditionalRelease()
+		return Noop{}
+	}
 	return l.start(ctx, []byte("l=info t="))
 }
 
-// Log an warn-level message. Every message must have a [hopefully] unique context
+// Log an warn-level message.
 func (l *KvLogger) Warn(ctx string) Logger {
+	if l.level > WARN {
+		l.conditionalRelease()
+		return Noop{}
+	}
 	return l.start(ctx, []byte("l=warn t="))
 }
 
-// Log an error-level message. Every message must have a [hopefully] unique context
+// Log an error-level message.
 func (l *KvLogger) Error(ctx string) Logger {
+	if l.level > ERROR {
+		l.conditionalRelease()
+		return Noop{}
+	}
 	return l.start(ctx, []byte("l=error t="))
 }
 
-// Log an fatal-level message. Every message must have a [hopefully] unique context
+// Log an fatal-level message.
 func (l *KvLogger) Fatal(ctx string) Logger {
+	if l.level > FATAL {
+		l.conditionalRelease()
+		return Noop{}
+	}
 	return l.start(ctx, []byte("l=fatal t="))
 }
 

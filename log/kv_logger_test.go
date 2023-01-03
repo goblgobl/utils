@@ -12,7 +12,7 @@ import (
 
 func Test_KvLogger_Int(t *testing.T) {
 	out := &strings.Builder{}
-	l := KvFactory(128)(nil)
+	l := KvFactory(128)(nil, INFO)
 
 	l.Info("i").Int("ms", 0).LogTo(out)
 	assertKvLog(t, out, false, map[string]string{"ms": "0"})
@@ -26,14 +26,14 @@ func Test_KvLogger_Int(t *testing.T) {
 
 func Test_KvLogger_Error(t *testing.T) {
 	out := &strings.Builder{}
-	l := KvFactory(128)(nil)
+	l := KvFactory(128)(nil, INFO)
 	l.Warn("w").Err(errors.New("test_error")).LogTo(out)
 	assertKvLog(t, out, false, map[string]string{"err": "test_error"})
 }
 
 func Test_KvLogger_StructuredError_NoData(t *testing.T) {
 	out := &strings.Builder{}
-	l := KvFactory(128)(nil)
+	l := KvFactory(128)(nil, INFO)
 	se := Err(299, errors.New("test_error"))
 
 	l.Warn("w").Err(se).LogTo(out)
@@ -45,7 +45,7 @@ func Test_KvLogger_StructuredError_NoData(t *testing.T) {
 
 func Test_KvLogger_StructuredError_Data(t *testing.T) {
 	out := &strings.Builder{}
-	l := KvFactory(128)(nil)
+	l := KvFactory(128)(nil, INFO)
 	se := Err(311, errors.New("test_error2")).String("a", "z").Int("zero", 0)
 
 	l.Warn("w").Err(se).LogTo(out)
@@ -59,7 +59,7 @@ func Test_KvLogger_StructuredError_Data(t *testing.T) {
 
 func Test_KvLogger_Timestamp(t *testing.T) {
 	out := &strings.Builder{}
-	l := KvFactory(128)(nil)
+	l := KvFactory(128)(nil, INFO)
 
 	l.Info("hi").LogTo(out)
 	fields := assertKvLog(t, out, false, nil)
@@ -70,7 +70,7 @@ func Test_KvLogger_Timestamp(t *testing.T) {
 func Test_KvLogger_UnencodedLenghts(t *testing.T) {
 	out := &strings.Builder{}
 	// info or warn messages take 23 characters + context length
-	l := KvFactory(35)(nil)
+	l := KvFactory(35)(nil, INFO)
 
 	l.Info("ctx1").String("a", "1").LogTo(out)
 	assertKvLog(t, out, false, map[string]string{"a": "1"})
@@ -114,7 +114,7 @@ func Test_KvLogger_UnencodedLenghts(t *testing.T) {
 func Test_KvLogger_EncodedLenghts(t *testing.T) {
 	out := &strings.Builder{}
 	// info or warn messages take 23 characters + context length
-	l := KvFactory(40)(nil)
+	l := KvFactory(40)(nil, INFO)
 
 	l.Info("ctx1").String("a", "\"").LogTo(out)
 	assertKvLog(t, out, false, map[string]string{"a": `"\""`})
@@ -152,7 +152,7 @@ func Test_KvLogger_EncodedLenghts(t *testing.T) {
 
 func Test_KvLogger_Fixed(t *testing.T) {
 	out := &strings.Builder{}
-	l := KvFactory(128)(nil)
+	l := KvFactory(128)(nil, INFO)
 
 	l.Field(NewField().Int("power", 9001).Finalize()).Fixed()
 	l.LogTo(out)
@@ -172,7 +172,7 @@ func Test_KvLogger_Fixed(t *testing.T) {
 
 func Test_KvLogger_MultiUse_Common(t *testing.T) {
 	out := &strings.Builder{}
-	l := KvFactory(128)(nil)
+	l := KvFactory(128)(nil, INFO)
 
 	l.Field(NewField().String("id", "123").Finalize()).MultiUse()
 	l.LogTo(out)
@@ -197,7 +197,7 @@ func Test_KvLogger_MultiUse_Common(t *testing.T) {
 
 func Test_Logger_FixedAndMultiUse(t *testing.T) {
 	out := &strings.Builder{}
-	l := KvFactory(128)(nil)
+	l := KvFactory(128)(nil, INFO)
 
 	l.Field(NewField().String("f", "one").Finalize()).Fixed()
 	l.Field(NewField().Int("m", 2).Finalize()).MultiUse()

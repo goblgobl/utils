@@ -1,6 +1,9 @@
 package log
 
-import "sync/atomic"
+import (
+	"fmt"
+	"sync/atomic"
+)
 
 type Level uint8
 
@@ -12,7 +15,7 @@ const (
 	NONE
 )
 
-type Factory func(p *Pool) Logger
+type Factory func(p *Pool, level Level) Logger
 
 type Pool struct {
 	field    *Field
@@ -32,7 +35,7 @@ func NewPool(count uint16, level Level, factory Factory, field *Field) *Pool {
 	}
 
 	for i := uint16(0); i < count; i++ {
-		l := factory(p)
+		l := factory(p, level)
 		if field != nil {
 			l.Field(*field).Fixed()
 		}
@@ -50,8 +53,9 @@ func (p *Pool) Checkout() Logger {
 	case logger := <-p.list:
 		return logger
 	default:
+		fmt.Println("AAA")
 		atomic.AddUint64(&p.depleted, 1)
-		l := p.factory(nil)
+		l := p.factory(nil, p.level)
 		if field := p.field; field != nil {
 			l.Field(*field).Fixed()
 		}

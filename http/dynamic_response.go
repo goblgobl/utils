@@ -15,7 +15,6 @@ import (
 	"src.goblgobl.com/utils"
 	"src.goblgobl.com/utils/json"
 	"src.goblgobl.com/utils/log"
-	"src.goblgobl.com/utils/validation"
 
 	"github.com/valyala/fasthttp"
 )
@@ -31,25 +30,29 @@ var (
 			Finalize()
 )
 
+type ValidationProvider interface {
+	Errors() []any
+}
+
 // body isn't known until runtime, but we know the status
 // and code and can put those in logData
 type DynamicResponse struct {
-	status  int
-	body    []byte
-	logData log.Field
+	Status  int
+	Body    []byte
+	LogData log.Field
 }
 
 func (r DynamicResponse) Write(conn *fasthttp.RequestCtx) {
-	conn.SetStatusCode(r.status)
-	conn.SetBody(r.body)
+	conn.SetStatusCode(r.Status)
+	conn.SetBody(r.Body)
 }
 
 func (r DynamicResponse) EnhanceLog(logger log.Logger) log.Logger {
-	logger.Field(r.logData).Int("res", len(r.body))
+	logger.Field(r.LogData).Int("res", len(r.Body))
 	return logger
 }
 
-func Validation(validator *validation.Result) DynamicResponse {
+func Validation(validator ValidationProvider) DynamicResponse {
 	data := struct {
 		Code    int    `json:"code"`
 		Error   string `json:"error"`
@@ -62,9 +65,9 @@ func Validation(validator *validation.Result) DynamicResponse {
 	body, _ := json.Marshal(data)
 
 	return DynamicResponse{
-		body:    body,
-		status:  400,
-		logData: validationLogData,
+		Body:    body,
+		Status:  400,
+		LogData: validationLogData,
 	}
 }
 
@@ -84,8 +87,8 @@ func Ok(data any) Response {
 
 func OkBytes(body []byte) DynamicResponse {
 	return DynamicResponse{
-		status:  200,
-		body:    body,
-		logData: OkLogData,
+		Status:  200,
+		Body:    body,
+		LogData: OkLogData,
 	}
 }
