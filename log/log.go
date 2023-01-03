@@ -16,7 +16,7 @@ func init() {
 	// object early in the startup sequence, but we'll configure a default one
 	// incase it's needed before the app has the chane to configure it (e.g. if the
 	// app fails to read the configuration file)
-	globalPool = NewPool(1, INFO, KvFactory(2048), nil)
+	globalPool = NewPool(1, INFO, true, KvFactory(2048), nil)
 }
 
 func Checkout() Logger {
@@ -37,6 +37,10 @@ func Error(ctx string) Logger {
 
 func Fatal(ctx string) Logger {
 	return globalPool.Fatal(ctx)
+}
+
+func Request(route string) Logger {
+	return globalPool.Request(route)
 }
 
 type Logger interface {
@@ -63,6 +67,7 @@ type Logger interface {
 	Warn(ctx string) Logger
 	Error(ctx string) Logger
 	Fatal(ctx string) Logger
+	Request(route string) Logger
 
 	// Log an error
 	Err(err error) Logger
@@ -90,6 +95,9 @@ type Logger interface {
 
 	// Add an string value to the current entry
 	String(key string, value string) Logger
+
+	// Add a boolean value to the current entry
+	Bool(key string, value bool) Logger
 
 	// Log a field
 	Field(field Field) Logger

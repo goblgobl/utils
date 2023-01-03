@@ -1,7 +1,6 @@
 package log
 
 import (
-	"fmt"
 	"sync/atomic"
 )
 
@@ -15,27 +14,29 @@ const (
 	NONE
 )
 
-type Factory func(p *Pool, level Level) Logger
+type Factory func(p *Pool, level Level, request bool) Logger
 
 type Pool struct {
 	field    *Field
 	depleted uint64
 	level    Level
+	requests bool
 	factory  Factory
 	list     chan Logger
 }
 
-func NewPool(count uint16, level Level, factory Factory, field *Field) *Pool {
+func NewPool(count uint16, level Level, requests bool, factory Factory, field *Field) *Pool {
 	list := make(chan Logger, count)
 	p := &Pool{
-		list:    list,
-		level:   level,
-		field:   field,
-		factory: factory,
+		list:     list,
+		level:    level,
+		field:    field,
+		requests: requests,
+		factory:  factory,
 	}
 
 	for i := uint16(0); i < count; i++ {
-		l := factory(p, level)
+		l := factory(p, level, requests)
 		if field != nil {
 			l.Field(*field).Fixed()
 		}
@@ -53,9 +54,8 @@ func (p *Pool) Checkout() Logger {
 	case logger := <-p.list:
 		return logger
 	default:
-		fmt.Println("AAA")
 		atomic.AddUint64(&p.depleted, 1)
-		l := p.factory(nil, p.level)
+		l := p.factory(nil, p.level, p.requests)
 		if field := p.field; field != nil {
 			l.Field(*field).Fixed()
 		}
@@ -89,6 +89,13 @@ func (p *Pool) Fatal(ctx string) Logger {
 		return Noop{}
 	}
 	return p.Checkout().Fatal(ctx)
+}
+
+func (p *Pool) Request(route string) Logger {
+	if !p.requests {
+		return Noop{}
+	}
+	return p.Checkout().Request(route)
 }
 
 func (p *Pool) Depleted() uint64 {

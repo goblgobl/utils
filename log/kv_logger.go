@@ -53,20 +53,25 @@ type KvLogger struct {
 	// on reset/release will pos == fixedLen
 	multiUseLen uint64
 
+	// The log level that we're logging.
 	level Level
+
+	// Whether or not we're logging request messages
+	requests bool
 }
 
-func NewKvLogger(maxSize uint32, pool *Pool, level Level) *KvLogger {
+func NewKvLogger(maxSize uint32, pool *Pool, level Level, requests bool) *KvLogger {
 	return &KvLogger{
-		pool:   pool,
-		level:  level,
-		buffer: make([]byte, maxSize),
+		pool:     pool,
+		level:    level,
+		requests: requests,
+		buffer:   make([]byte, maxSize),
 	}
 }
 
 func KvFactory(maxSize uint32) Factory {
-	return func(pool *Pool, level Level) Logger {
-		return NewKvLogger(maxSize, pool, level)
+	return func(pool *Pool, level Level, requests bool) Logger {
+		return NewKvLogger(maxSize, pool, level, requests)
 	}
 }
 
@@ -103,6 +108,16 @@ func (l *KvLogger) Int(key string, value int) Logger {
 // Add a field (key=value) where value is an int
 func (l *KvLogger) Int64(key string, value int64) Logger {
 	l.writeKeyValue(key, strconv.FormatInt(value, 10), true)
+	return l
+}
+
+// Add a field (key=value) where value is a boolean
+func (l *KvLogger) Bool(key string, value bool) Logger {
+	if value {
+		l.writeKeyValue(key, "1", true)
+	} else {
+		l.writeKeyValue(key, "0", true)
+	}
 	return l
 }
 
@@ -194,6 +209,15 @@ func (l *KvLogger) Fatal(ctx string) Logger {
 		return Noop{}
 	}
 	return l.start(ctx, []byte("l=fatal t="))
+}
+
+// Log a request message.
+func (l *KvLogger) Request(route string) Logger {
+	if !l.requests {
+		l.conditionalRelease()
+		return Noop{}
+	}
+	return l.start(route, []byte("l=req t="))
 }
 
 func (l *KvLogger) Field(field Field) Logger {

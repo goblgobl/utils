@@ -20,31 +20,31 @@ func Test_Pool_Level(t *testing.T) {
 		l.Release()
 	}
 
-	p := NewPool(1, INFO, KvFactory(64), nil)
+	p := NewPool(1, INFO, true, KvFactory(64), nil)
 	assertKvLogger(p.Info(""))
 	assertKvLogger(p.Warn(""))
 	assertKvLogger(p.Error(""))
 	assertKvLogger(p.Fatal(""))
 
-	p = NewPool(1, WARN, KvFactory(64), nil)
+	p = NewPool(1, WARN, true, KvFactory(64), nil)
 	assertNoop(p.Info(""))
 	assertKvLogger(p.Warn(""))
 	assertKvLogger(p.Error(""))
 	assertKvLogger(p.Fatal(""))
 
-	p = NewPool(1, ERROR, KvFactory(64), nil)
+	p = NewPool(1, ERROR, true, KvFactory(64), nil)
 	assertNoop(p.Info(""))
 	assertNoop(p.Warn(""))
 	assertKvLogger(p.Error(""))
 	assertKvLogger(p.Fatal(""))
 
-	p = NewPool(1, FATAL, KvFactory(64), nil)
+	p = NewPool(1, FATAL, true, KvFactory(64), nil)
 	assertNoop(p.Info(""))
 	assertNoop(p.Warn(""))
 	assertNoop(p.Error(""))
 	assertKvLogger(p.Fatal(""))
 
-	p = NewPool(1, NONE, KvFactory(64), nil)
+	p = NewPool(1, NONE, true, KvFactory(64), nil)
 	assertNoop(p.Info(""))
 	assertNoop(p.Warn(""))
 	assertNoop(p.Error(""))
@@ -53,7 +53,7 @@ func Test_Pool_Level(t *testing.T) {
 
 func Test_Pool_Checkout(t *testing.T) {
 	out := &strings.Builder{}
-	p := NewPool(1, WARN, KvFactory(64), nil)
+	p := NewPool(1, WARN, true, KvFactory(64), nil)
 
 	l1 := p.Checkout()
 	l1.Info("should not log").LogTo(out)
@@ -68,7 +68,7 @@ func Test_Pool_Checkout(t *testing.T) {
 }
 
 func Test_Pool_Depleted(t *testing.T) {
-	p := NewPool(2, INFO, KvFactory(64), nil)
+	p := NewPool(2, INFO, true, KvFactory(64), nil)
 	assert.Equal(t, p.Len(), 2)
 	assert.Equal(t, p.Depleted(), 0)
 
@@ -91,7 +91,7 @@ func Test_Pool_Depleted(t *testing.T) {
 }
 
 func Test_Pool_DynamicCreationWontReleaseToPool(t *testing.T) {
-	p := NewPool(1, INFO, KvFactory(64), nil)
+	p := NewPool(1, INFO, true, KvFactory(64), nil)
 
 	l1 := p.Checkout().(*KvLogger)
 	l2 := p.Checkout().(*KvLogger)
@@ -105,7 +105,7 @@ func Test_Pool_DynamicCreationWontReleaseToPool(t *testing.T) {
 
 func Test_Pool_KvLogging(t *testing.T) {
 	out := &strings.Builder{}
-	p := NewPool(1, INFO, KvFactory(128), nil)
+	p := NewPool(1, INFO, true, KvFactory(128), nil)
 
 	l1 := p.Info("c-info").String("a", "b")
 	l1.LogTo(out)
@@ -138,4 +138,24 @@ func Test_Pool_KvLogging(t *testing.T) {
 		"l": "fatal",
 		"c": "c-fatal",
 	})
+}
+
+func Test_Pool_Request(t *testing.T) {
+	out := &strings.Builder{}
+	p := NewPool(1, FATAL, true, KvFactory(128), nil)
+
+	l1 := p.Request("route1").String("a", "b")
+	l1.LogTo(out)
+	assertKvLog(t, out, true, map[string]string{
+		"a": "b",
+		"l": "req",
+		"c": "route1",
+	})
+
+	// disable request logging
+	p = NewPool(1, FATAL, false, KvFactory(128), nil)
+	l1 = p.Request("route2").String("a", "b")
+	l1.LogTo(out)
+	assertKvLog(t, out, true, nil)
+
 }

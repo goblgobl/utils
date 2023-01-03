@@ -28,6 +28,9 @@ func Test_Global_Helpers(t *testing.T) {
 	Fatal("f").LogTo(out)
 	assertKvLog(t, out, false, map[string]string{"l": "fatal", "c": "f"})
 
+	Request("r1").LogTo(out)
+	assertKvLog(t, out, false, map[string]string{"l": "req", "c": "r1"})
+
 	Checkout().Info("i2").LogTo(out)
 	assertKvLog(t, out, false, map[string]string{"l": "info", "c": "i2"})
 }

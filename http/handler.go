@@ -10,7 +10,7 @@ import (
 type Env interface {
 	Release()
 	RequestId() string
-	Info(string) log.Logger
+	Request(string) log.Logger
 	Error(string) log.Logger
 }
 
@@ -34,22 +34,21 @@ func Handler[T Env](routeName string, loadEnv func(ctx *fasthttp.RequestCtx) (T,
 
 		if err == nil {
 			if haveEnv {
-				logger = env.Info("req")
+				logger = env.Request(routeName)
 			} else {
-				logger = log.Info("req")
+				logger = log.Request(routeName)
 			}
 		} else {
 			if haveEnv {
-				logger = env.Error("handler").Err(err)
+				logger = env.Error("handler").Err(err).String("route", routeName)
 			} else {
-				logger = log.Error("handler").Err(err)
+				logger = log.Error("handler").Err(err).String("route", routeName)
 			}
 			res = ServerError()
 		}
 
 		res.Write(conn)
 		res.EnhanceLog(logger).
-			String("route", routeName).
 			Int64("ms", time.Now().Sub(start).Milliseconds()).
 			Log()
 	}

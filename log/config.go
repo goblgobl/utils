@@ -10,6 +10,7 @@ type Config struct {
 	Level    string   `json:"level"`
 	PoolSize uint16   `json:"pool_size"`
 	Format   string   `json:"format"`
+	Requests *bool    `json:"requests"`
 	KV       KvConfig `json:"kv"`
 }
 
@@ -56,11 +57,17 @@ func Configure(config Config) error {
 		poolSize = 100
 	}
 
-	globalPool = NewPool(poolSize, level, factory, nil)
+	requests := true
+	if r := config.Requests; r != nil && *r == false {
+		requests = false
+	}
+
+	globalPool = NewPool(poolSize, level, requests, factory, nil)
 	Info("log_config").
 		String("level", levelName).
 		String("format", formatName).
 		Int("pool_size", int(poolSize)).
+		Bool("requests", requests).
 		Log()
 	return nil
 }
