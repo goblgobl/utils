@@ -31,7 +31,11 @@ func (p *Pool) Len() int {
 	return len(p.list)
 }
 
-func (p *Pool) Checkout(maxSize uint32) *Buffer {
+func (p *Pool) Checkout() *Buffer {
+	return p.CheckoutMax(p.maxSize)
+}
+
+func (p *Pool) CheckoutMax(maxSize uint32) *Buffer {
 	select {
 	case buffer := <-p.list:
 		buffer.max = int(maxSize)

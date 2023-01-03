@@ -98,7 +98,7 @@ func Test_Buffer_MaxSize_LessThan_Min(t *testing.T) {
 	b := New(10, 5)
 	b.Write([]byte("over"))
 
-	s, err := b.String()
+	s, err := b.UnsafeString()
 	assert.Nil(t, err)
 	assert.Equal(t, s, "over")
 

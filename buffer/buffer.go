@@ -97,6 +97,11 @@ func (b *Buffer) String() (string, error) {
 	return string(bytes), err
 }
 
+func (b *Buffer) UnsafeString() (string, error) {
+	bytes, err := b.Bytes()
+	return utils.B2S(bytes), err
+}
+
 func (b *Buffer) MustString() string {
 	str, err := b.String()
 	if err != nil {
