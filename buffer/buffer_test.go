@@ -1,6 +1,8 @@
 package buffer
 
 import (
+	"bytes"
+	"io"
 	"testing"
 
 	"src.goblgobl.com/tests/assert"
@@ -157,7 +159,6 @@ func Test_Buffer_WritePad(t *testing.T) {
 	b.WriteByteUnsafe('A')
 	assert.Equal(t, cap(b.data), 10)
 	assert.Equal(t, testMustString(b), "123456789A")
-
 }
 
 func Test_Buffer_Truncate(t *testing.T) {
@@ -185,6 +186,24 @@ func Test_Buffer_SqliteBytes(t *testing.T) {
 	sql, err = b.SqliteBytes()
 	assert.Nil(t, err)
 	assert.Equal(t, string(sql), "hello\x00")
+}
+
+func Test_Buffer_Reader(t *testing.T) {
+	b := New(5000, 5000)
+	b.Write(bytes.Repeat([]byte("a"), 5000))
+
+	var out bytes.Buffer
+	n, err := io.Copy(&out, b)
+	assert.Nil(t, err)
+	assert.Equal(t, n, 5000)
+	assert.Equal(t, out.Len(), 5000)
+
+	b.Reset()
+	out.Reset()
+	n, err = io.Copy(&out, b)
+	assert.Nil(t, err)
+	assert.Equal(t, n, 0)
+	assert.Equal(t, out.Len(), 0)
 }
 
 func testMustString(b *Buffer) string {

@@ -3,6 +3,7 @@ package buffer
 import (
 	"errors"
 	"fmt"
+	"io"
 
 	"src.goblgobl.com/utils"
 )
@@ -56,6 +57,9 @@ type Buffer struct {
 	// could be nil (if created outside of the pool, or if the pool
 	// was empty and created it on the fly)
 	pool *Pool
+
+	// the position within out data our last read was at
+	read int
 }
 
 func New(min uint32, max uint32) *Buffer {
@@ -69,6 +73,7 @@ func New(min uint32, max uint32) *Buffer {
 
 func (b *Buffer) Reset() {
 	b.pos = 0
+	b.read = 0
 	b.err = nil
 	b.data = b.static
 }
@@ -78,6 +83,12 @@ func (b *Buffer) Release() {
 		b.Reset()
 		pool.list <- b
 	}
+}
+
+// io.Closer
+func (b *Buffer) Close() error {
+	b.Release()
+	return nil
 }
 
 func (b *Buffer) Len() int {
@@ -168,6 +179,26 @@ func (b *Buffer) WriteByteUnsafe(byte byte) {
 
 func (b *Buffer) Truncate(n int) {
 	b.pos -= n
+}
+
+// io.Reader
+func (b *Buffer) Read(p []byte) (int, error) {
+	if err := b.err; err != nil {
+		return 0, err
+	}
+
+	read := b.read
+	if b.pos <= read {
+		b.read = 0 // reset this so it can be read again
+		if len(p) == 0 {
+			return 0, nil
+		}
+		return 0, io.EOF
+	}
+
+	n := copy(p, b.data[read:])
+	b.read = read + n
+	return n, nil
 }
 
 func (b *Buffer) ensureCapacity(l int) bool {
