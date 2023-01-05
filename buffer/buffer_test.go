@@ -189,7 +189,7 @@ func Test_Buffer_SqliteBytes(t *testing.T) {
 }
 
 func Test_Buffer_Reader(t *testing.T) {
-	b := New(5000, 5000)
+	b := New(6000, 7000)
 	b.Write(bytes.Repeat([]byte("a"), 5000))
 
 	var out bytes.Buffer

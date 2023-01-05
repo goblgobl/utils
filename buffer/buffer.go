@@ -134,18 +134,21 @@ func (b Buffer) SqliteBytes() ([]byte, error) {
 
 // Write and ensure enough capacity for len(data) + padSize
 // Meant to be used with WriteByteUnsafe.
-func (b *Buffer) WritePad(data []byte, padSize int) {
+func (b *Buffer) WritePad(data []byte, padSize int) (int, error) {
 	if !b.ensureCapacity(len(data) + padSize) {
-		return
+		return 0, b.err
 	}
 
 	pos := b.pos
 	copy(b.data[pos:], data)
-	b.pos = pos + len(data)
+
+	l := len(data)
+	b.pos = pos + l
+	return l, nil
 }
 
-func (b *Buffer) Write(data []byte) {
-	b.WritePad(data, 0)
+func (b *Buffer) Write(data []byte) (int, error) {
+	return b.WritePad(data, 0)
 }
 
 func (b *Buffer) WriteUnsafe(data string) {
@@ -187,8 +190,9 @@ func (b *Buffer) Read(p []byte) (int, error) {
 		return 0, err
 	}
 
+	pos := b.pos
 	read := b.read
-	if b.pos <= read {
+	if pos <= read {
 		b.read = 0 // reset this so it can be read again
 		if len(p) == 0 {
 			return 0, nil
@@ -196,7 +200,7 @@ func (b *Buffer) Read(p []byte) (int, error) {
 		return 0, io.EOF
 	}
 
-	n := copy(p, b.data[read:])
+	n := copy(p, b.data[read:pos])
 	b.read = read + n
 	return n, nil
 }
