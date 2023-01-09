@@ -18,6 +18,5 @@ import (
 
 type Response interface {
 	// return logger for chaining
-	EnhanceLog(logger log.Logger) log.Logger
-	Write(conn *fasthttp.RequestCtx)
+	Write(conn *fasthttp.RequestCtx, logger log.Logger) log.Logger
 }

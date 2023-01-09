@@ -1,6 +1,7 @@
 package http
 
 import (
+	"errors"
 	"testing"
 
 	"src.goblgobl.com/tests/assert"
@@ -69,7 +70,7 @@ func Test_StaticError(t *testing.T) {
 }
 
 func Test_ServerError(t *testing.T) {
-	res := read(ServerError())
+	res := read(ServerError(errors.New("an_error1")))
 	assert.Equal(t, res.status, 500)
 	assert.Equal(t, res.json.Int("code"), 2001)
 	assert.Equal(t, res.json.String("error"), "internal server error")
@@ -78,6 +79,7 @@ func Test_ServerError(t *testing.T) {
 	assert.Equal(t, len(errorId), 36)
 
 	assert.Equal(t, res.log["res"], "95")
+	assert.Equal(t, res.log["err"], "an_error1")
 	assert.Equal(t, res.log["code"], "2001")
 	assert.Equal(t, res.log["status"], "500")
 	assert.Equal(t, res.log["eid"], errorId)
@@ -115,17 +117,14 @@ func Test_Validation(t *testing.T) {
 
 func read(res Response) TestResponse {
 	conn := &fasthttp.RequestCtx{}
-	res.Write(conn)
+	logger := res.Write(conn, log.Request("test"))
+	defer logger.Release()
 
 	body := conn.Response.Body()
 	var json typed.Typed
 	if len(body) > 0 {
 		json = typed.Must(body)
 	}
-
-	logger := log.Info("test")
-	defer logger.Release()
-	res.EnhanceLog(logger)
 
 	return TestResponse{
 		json:   json,

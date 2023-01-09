@@ -42,14 +42,10 @@ type DynamicResponse struct {
 	LogData log.Field
 }
 
-func (r DynamicResponse) Write(conn *fasthttp.RequestCtx) {
+func (r DynamicResponse) Write(conn *fasthttp.RequestCtx, logger log.Logger) log.Logger {
 	conn.SetStatusCode(r.Status)
 	conn.SetBody(r.Body)
-}
-
-func (r DynamicResponse) EnhanceLog(logger log.Logger) log.Logger {
-	logger.Field(r.LogData).Int("res", len(r.Body))
-	return logger
+	return logger.Field(r.LogData).Int("res", len(r.Body))
 }
 
 func Validation(validator ValidationProvider) DynamicResponse {
@@ -76,10 +72,7 @@ func Ok(data any) Response {
 	if data != nil {
 		var err error
 		if body, err = json.Marshal(data); err != nil {
-			se := SerializationError()
-			logger := log.Error("res_ok_json").Err(err)
-			se.EnhanceLog(logger).Log()
-			return se
+			return SerializationError(err)
 		}
 	}
 	return OkBytes(body)

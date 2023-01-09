@@ -24,14 +24,10 @@ type StaticResponse struct {
 	logData log.Field
 }
 
-func (r StaticResponse) Write(conn *fasthttp.RequestCtx) {
+func (r StaticResponse) Write(conn *fasthttp.RequestCtx, logger log.Logger) log.Logger {
 	conn.SetStatusCode(r.status)
 	conn.SetBody(r.body)
-}
-
-func (r StaticResponse) EnhanceLog(logger log.Logger) log.Logger {
-	logger.Field(r.logData)
-	return logger
+	return logger.Field(r.logData)
 }
 
 func StaticError(status int, code int, error string) StaticResponse {

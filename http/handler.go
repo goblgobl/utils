@@ -40,15 +40,14 @@ func Handler[T Env](routeName string, loadEnv func(ctx *fasthttp.RequestCtx) (T,
 			}
 		} else {
 			if haveEnv {
-				logger = env.Error("handler").Err(err).String("route", routeName)
+				logger = env.Error("handler").String("route", routeName)
 			} else {
-				logger = log.Error("handler").Err(err).String("route", routeName)
+				logger = log.Error("handler").String("route", routeName)
 			}
-			res = ServerError()
+			res = ServerError(err)
 		}
 
-		res.Write(conn)
-		res.EnhanceLog(logger).
+		res.Write(conn, logger).
 			Int64("ms", time.Now().Sub(start).Milliseconds()).
 			Log()
 	}
@@ -65,15 +64,13 @@ func NoEnvHandler(routeName string, next func(ctx *fasthttp.RequestCtx) (Respons
 		res, err := next(conn)
 
 		if err == nil {
-			logger = log.Info("req")
+			logger = log.Request(routeName)
 		} else {
-			res = ServerError()
-			logger = log.Error("handler").Err(err)
+			res = ServerError(err)
+			logger = log.Error("handler").String("route", routeName)
 		}
 
-		res.Write(conn)
-		res.EnhanceLog(logger).
-			String("route", routeName).
+		res.Write(conn, logger).
 			Int64("ms", time.Now().Sub(start).Milliseconds()).
 			Log()
 	}

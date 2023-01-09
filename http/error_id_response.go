@@ -21,23 +21,24 @@ var (
 )
 
 type ErrorIdResponse struct {
+	err     error
 	ErrorId string
 	Body    []byte
 	LogData log.Field
 }
 
-func (r ErrorIdResponse) Write(conn *fasthttp.RequestCtx) {
+func (r ErrorIdResponse) Write(conn *fasthttp.RequestCtx, logger log.Logger) log.Logger {
 	conn.SetStatusCode(500)
 	conn.Response.Header.SetBytesK([]byte("Error-Id"), r.ErrorId)
 	conn.SetBody(r.Body)
+	return logger.
+		Err(r.err).
+		Field(r.LogData).
+		String("eid", r.ErrorId).
+		Int("res", len(r.Body))
 }
 
-func (r ErrorIdResponse) EnhanceLog(logger log.Logger) log.Logger {
-	logger.Field(r.LogData).String("eid", r.ErrorId).Int("res", len(r.Body))
-	return logger
-}
-
-func ServerError() Response {
+func ServerError(err error) Response {
 	errorId := uuid.String()
 
 	data := struct {
@@ -52,13 +53,14 @@ func ServerError() Response {
 	body, _ := json.Marshal(data)
 
 	return ErrorIdResponse{
+		err:     err,
 		Body:    body,
 		ErrorId: errorId,
 		LogData: serverErrorLogData,
 	}
 }
 
-func SerializationError() Response {
+func SerializationError(err error) Response {
 	errorId := uuid.String()
 
 	data := struct {
@@ -73,6 +75,7 @@ func SerializationError() Response {
 	body, _ := json.Marshal(data)
 
 	return ErrorIdResponse{
+		err:     err,
 		Body:    body,
 		ErrorId: errorId,
 		LogData: serializationErrorLogData,

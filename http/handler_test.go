@@ -129,12 +129,11 @@ func Test_NoEnvHandler_LogsResponse(t *testing.T) {
 	})
 
 	reqLog := log.KvParse(logged)
-	assert.Equal(t, reqLog["l"], "info")
+	assert.Equal(t, reqLog["l"], "req")
 	assert.Equal(t, reqLog["status"], "404")
-	assert.Equal(t, reqLog["route"], "test-route")
+	assert.Equal(t, reqLog["c"], "test-route")
 	assert.Equal(t, reqLog["res"], "33")
 	assert.Equal(t, reqLog["code"], "9001")
-	assert.Equal(t, reqLog["c"], "req")
 }
 
 func Test_NoEnvHandler_LogsError(t *testing.T) {
