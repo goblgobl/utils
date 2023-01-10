@@ -71,6 +71,16 @@ func New(min uint32, max uint32) *Buffer {
 	}
 }
 
+// create a buffer that contains the specified data
+func Containing(data []byte, max int) *Buffer {
+	return &Buffer{
+		data:   data,
+		static: data,
+		max:    max,
+		pos:    len(data),
+	}
+}
+
 func (b *Buffer) Reset() {
 	b.pos = 0
 	b.read = 0
@@ -123,6 +133,15 @@ func (b *Buffer) MustString() string {
 
 func (b Buffer) Bytes() ([]byte, error) {
 	return b.data[:b.pos], b.err
+}
+
+// An advanced function. Some code might want to manipulate a []byte directly
+// while leveraging the pre-allocated nature of a pooled buffer. Importantly,
+// the returned bytes are not cleared
+func (b Buffer) TakeBytes(l int) ([]byte, error) {
+	b.Reset()
+	b.ensureCapacity(l)
+	return b.data[:l], b.err
 }
 
 // optimization for passing the result to the ExecTerminated

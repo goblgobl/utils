@@ -8,6 +8,13 @@ import (
 	"src.goblgobl.com/tests/assert"
 )
 
+func Test_Buffer_Containing(t *testing.T) {
+	b := Containing([]byte("hello world"), 20)
+	assert.Equal(t, b.Len(), 11)
+	b.WriteByte('!')
+	assert.Equal(t, testMustString(b), "hello world!")
+}
+
 func Test_Buffer_Write_NoGrow(t *testing.T) {
 	b := New(10, 20)
 	assert.Equal(t, b.Len(), 0)
@@ -64,6 +71,16 @@ func Test_Buffer_WriteByte_Grow(t *testing.T) {
 	b.WriteByte('z')
 	assert.Equal(t, testMustString(b), "yz")
 	assert.NotEqual(t, &b.data[0], &b.static[0])
+}
+
+func Test_Buffer_TakeBytes(t *testing.T) {
+	b := New(20, 40)
+	b.WriteByte('z')
+
+	// this resets the buffer
+	bytes, err := b.TakeBytes(5)
+	assert.Nil(t, err)
+	assert.Equal(t, len(bytes), 5)
 }
 
 func Test_Buffer_Grow_Doubling(t *testing.T) {
