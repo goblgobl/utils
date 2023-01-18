@@ -32,6 +32,7 @@ are going to be cross-project.
 
 var (
 	ErrMaxSize = errors.New("buffer maximum size")
+	Empty      = new(Buffer)
 )
 
 type Buffer struct {

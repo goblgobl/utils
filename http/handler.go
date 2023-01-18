@@ -18,7 +18,6 @@ func Handler[T Env](routeName string, loadEnv func(ctx *fasthttp.RequestCtx) (T,
 	return func(conn *fasthttp.RequestCtx) {
 		start := time.Now()
 
-		var haveEnv bool
 		var logger log.Logger
 		env, res, err := loadEnv(conn)
 
@@ -26,24 +25,15 @@ func Handler[T Env](routeName string, loadEnv func(ctx *fasthttp.RequestCtx) (T,
 		header.SetContentTypeBytes([]byte("application/json"))
 
 		if res == nil && err == nil {
-			haveEnv = true
 			defer env.Release()
+			logger = env.Request(routeName)
 			header.SetBytesK([]byte("RequestId"), env.RequestId())
 			res, err = next(conn, env)
+		} else {
+			logger = log.Request(routeName)
 		}
 
-		if err == nil {
-			if haveEnv {
-				logger = env.Request(routeName)
-			} else {
-				logger = log.Request(routeName)
-			}
-		} else {
-			if haveEnv {
-				logger = env.Error("handler").String("route", routeName)
-			} else {
-				logger = log.Error("handler").String("route", routeName)
-			}
+		if err != nil {
 			res = ServerError(err)
 		}
 

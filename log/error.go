@@ -32,9 +32,14 @@ func (e *StructuredError) ensureMap() {
 }
 
 func Err(code int, err error) *StructuredError {
+	return ErrData(code, err, nil)
+}
+
+func ErrData(code int, err error, data map[string]any) *StructuredError {
 	return &StructuredError{
 		Err:  err,
 		Code: code,
+		Data: data,
 	}
 }
 
