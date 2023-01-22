@@ -114,9 +114,9 @@ func (l *KvLogger) Int64(key string, value int64) Logger {
 // Add a field (key=value) where value is a boolean
 func (l *KvLogger) Bool(key string, value bool) Logger {
 	if value {
-		l.writeKeyValue(key, "1", true)
+		l.writeKeyValue(key, "Y", true)
 	} else {
-		l.writeKeyValue(key, "0", true)
+		l.writeKeyValue(key, "N", true)
 	}
 	return l
 }

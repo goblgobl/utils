@@ -29,10 +29,10 @@ func Test_KvLogger_Bool(t *testing.T) {
 	l := KvFactory(128)(nil, INFO, true)
 
 	l.Info("i").Bool("active", true).LogTo(out)
-	assertKvLog(t, out, false, map[string]string{"active": "1"})
+	assertKvLog(t, out, false, map[string]string{"active": "Y"})
 
 	l.Info("i").Bool("active", false).String("x", "b").LogTo(out)
-	assertKvLog(t, out, false, map[string]string{"active": "0", "x": "b"})
+	assertKvLog(t, out, false, map[string]string{"active": "N", "x": "b"})
 }
 
 func Test_KvLogger_Error(t *testing.T) {
