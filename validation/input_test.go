@@ -6,6 +6,7 @@ import (
 
 	"github.com/valyala/fasthttp"
 	"src.goblgobl.com/tests/assert"
+	"src.goblgobl.com/utils/ascii"
 	"src.goblgobl.com/utils/typed"
 )
 
@@ -191,6 +192,26 @@ func Test_String_Args(t *testing.T) {
 
 	_, res := testArgs(o, "name", "leto")
 	assert.Validation(t, res).FieldsHaveNoErrors("name")
+}
+
+func Test_String_Transformer(t *testing.T) {
+	o := Object().
+		Field("name", String().Transformer(ascii.Lowercase))
+
+	data, res := testInput(o, "name", "LeTO_9001 !!")
+	assert.Validation(t, res).FieldsHaveNoErrors("name")
+	assert.Equal(t, data.String("name"), "leto_9001 !!")
+}
+
+func Test_String_Multiple_Transformer(t *testing.T) {
+	o := Object().
+		Field("name", String().Transformer(func(input string) string {
+			return input + "ZZ"
+		}).Transformer(ascii.Lowercase))
+
+	data, res := testInput(o, "name", "AB")
+	assert.Validation(t, res).FieldsHaveNoErrors("name")
+	assert.Equal(t, data.String("name"), "abzz")
 }
 
 func Test_Int_Required(t *testing.T) {

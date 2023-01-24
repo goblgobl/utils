@@ -12,6 +12,7 @@ type StringRule interface {
 	Validate(field Field, value string, object typed.Typed, input typed.Typed, res *Result) string
 }
 
+type StringTransformer func(value string) string
 type StringConverter func(field Field, value string, object typed.Typed, input typed.Typed, res *Result) any
 type StringFuncValidator func(field Field, value string, object typed.Typed, input typed.Typed, res *Result) string
 
@@ -23,13 +24,14 @@ func String() *StringValidator {
 }
 
 type StringValidator struct {
-	field     Field
-	dflt      string
-	required  bool
-	converter StringConverter
-	rules     []StringRule
-	errReq    Invalid
-	errType   Invalid
+	field        Field
+	dflt         string
+	required     bool
+	rules        []StringRule
+	converter    StringConverter
+	transformers []StringTransformer
+	errReq       Invalid
+	errType      Invalid
 }
 
 func (v *StringValidator) argsToTyped(args *fasthttp.Args, t typed.Typed) {
@@ -60,6 +62,10 @@ func (v *StringValidator) validate(object typed.Typed, input typed.Typed, res *R
 		value = rule.Validate(field, value, object, input, res)
 	}
 
+	for _, transformer := range v.transformers {
+		value = transformer(value)
+	}
+
 	if converter := v.converter; converter != nil {
 		object[fieldName] = converter(field, value, object, input, res)
 	} else {
@@ -76,13 +82,14 @@ func (v *StringValidator) addField(fieldName string) InputValidator {
 	}
 
 	return &StringValidator{
-		field:     field,
-		dflt:      v.dflt,
-		required:  v.required,
-		converter: v.converter,
-		rules:     rules,
-		errReq:    v.errReq,
-		errType:   v.errType,
+		field:        field,
+		dflt:         v.dflt,
+		required:     v.required,
+		converter:    v.converter,
+		transformers: v.transformers,
+		rules:        rules,
+		errReq:       v.errReq,
+		errType:      v.errType,
 	}
 }
 
@@ -128,6 +135,11 @@ func (v *StringValidator) Func(fn StringFuncValidator) *StringValidator {
 
 func (v *StringValidator) Convert(fn StringConverter) *StringValidator {
 	v.converter = fn
+	return v
+}
+
+func (v *StringValidator) Transformer(transformer StringTransformer) *StringValidator {
+	v.transformers = append(v.transformers, transformer)
 	return v
 }
 
