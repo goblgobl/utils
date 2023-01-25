@@ -563,29 +563,55 @@ func Test_UUID_Type(t *testing.T) {
 		Field("id", InvalidUUIDType())
 }
 
-func Test_Nested_Object(t *testing.T) {
+func Test_Nested_Object_Fields(t *testing.T) {
 	child := Object().
 		Field("age", Int().Required()).
 		Field("name", String().Required())
 
 	o1 := Object().Field("user", child)
-	_, res := testInput(o1, "id", 3)
+	_, res := testInput(o1, "user", 3)
+	assert.Validation(t, res).
+		Field("user", InvalidObjectType())
 
+	o2 := Object().Field("user", child)
+	_, res = testInput(o2, "user", map[string]any{})
 	assert.Validation(t, res).
 		Field("user.age", Required()).
 		Field("user.name", Required())
 
-	o2 := Object().Field("entry", o1)
-	_, res = testInput(o2, "id", 3)
+	o3 := Object().Field("entry", o2)
+	_, res = testInput(o3, "entry", map[string]any{"user": map[string]any{}})
 	assert.Validation(t, res).
 		Field("entry.user.age", Required()).
 		Field("entry.user.name", Required())
 
-	_, res = testInput(o2, "entry", typed.Typed{"user": typed.Typed{"age": 3000, "name": "Leto"}})
+	_, res = testInput(o3, "entry", typed.Typed{"user": typed.Typed{"age": 3000, "name": "Leto"}})
 	assert.Validation(t, res).FieldsHaveNoErrors("entry.user.age", "entry.user.name")
 }
 
-func Test_Array_Object(t *testing.T) {
+func Test_Nested_Object_Required(t *testing.T) {
+	o1 := Object().Field("user", Object().Required())
+
+	_, res := testInput(o1)
+	assert.Validation(t, res).Field("user", Required())
+
+	_, res = testInput(Object().Field("user", o1.NotRequired()))
+	assert.Validation(t, res).FieldsHaveNoErrors("user")
+}
+
+func Test_Nested_Object_Default(t *testing.T) {
+	o1 := Object().Field("user", Object().Default(typed.Typed{"id": 3}))
+
+	data, res := testInput(o1, "user", map[string]any{"name": "leto"})
+	assert.Validation(t, res).FieldsHaveNoErrors("user")
+	assert.Equal(t, data.Object("user").String("name"), "leto")
+
+	data, res = testInput(o1)
+	assert.Validation(t, res).FieldsHaveNoErrors("user")
+	assert.Equal(t, data.Object("user").Int("id"), 3)
+}
+
+func Test_Array_Objects(t *testing.T) {
 	child := Object().Field("name", String().Required())
 	o1 := Object().
 		Field("users", Array().Required().Validator(child))
@@ -596,17 +622,17 @@ func Test_Array_Object(t *testing.T) {
 	_, res = testInput(o1, "users", 1)
 	assert.Validation(t, res).Field("users", InvalidArrayType())
 
-	_, res = testInput(o1, "users", []any{typed.Typed{}, typed.Typed{}})
+	_, res = testInput(o1, "users", []any{map[string]any{}, map[string]any{}})
 	assert.Validation(t, res).
 		Field("users.0.name", Required()).
 		Field("users.1.name", Required())
 
-	_, res = testInput(o1, "users", []any{typed.Typed{"name": "leto"}})
+	_, res = testInput(o1, "users", []any{map[string]any{"name": "leto"}})
 	assert.Validation(t, res).FieldsHaveNoErrors("users.0.name")
 
 	_, res = testInput(o1, "users", []any{
-		typed.Typed{"name": "leto"},
-		typed.Typed{"name": 3},
+		map[string]any{"name": "leto"},
+		map[string]any{"name": 3},
 	})
 	assert.Validation(t, res).
 		Field("users.1.name", InvalidStringType()).

@@ -104,6 +104,13 @@ func InvalidArrayType() Invalid {
 	}
 }
 
+func InvalidObjectType() Invalid {
+	return Invalid{
+		Code:  utils.VAL_OBJECT_TYPE,
+		Error: "must be an object",
+	}
+}
+
 func InvalidArrayMinLength(min int) Invalid {
 	return Invalid{
 		Code:  utils.VAL_ARRAY_MIN_LENGTH,
