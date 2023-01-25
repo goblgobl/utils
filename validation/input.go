@@ -46,7 +46,8 @@ import (
 
 type InputValidator interface {
 	addField(name string) InputValidator
-	validate(object typed.Typed, input typed.Typed, res *Result)
+	validateArrayValue(value any, res *Result)
+	validateObjectField(object typed.Typed, input typed.Typed, res *Result)
 	argsToTyped(args *fasthttp.Args, dest typed.Typed)
 }
 

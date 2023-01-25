@@ -593,15 +593,15 @@ func Test_Array_Object(t *testing.T) {
 	_, res = testInput(o1, "users", 1)
 	assert.Validation(t, res).Field("users", InvalidArrayType())
 
-	_, res = testInput(o1, "users", []typed.Typed{typed.Typed{}, typed.Typed{}})
+	_, res = testInput(o1, "users", []any{typed.Typed{}, typed.Typed{}})
 	assert.Validation(t, res).
 		Field("users.0.name", Required()).
 		Field("users.1.name", Required())
 
-	_, res = testInput(o1, "users", []typed.Typed{typed.Typed{"name": "leto"}})
+	_, res = testInput(o1, "users", []any{typed.Typed{"name": "leto"}})
 	assert.Validation(t, res).FieldsHaveNoErrors("users.0.name")
 
-	_, res = testInput(o1, "users", []typed.Typed{
+	_, res = testInput(o1, "users", []any{
 		typed.Typed{"name": "leto"},
 		typed.Typed{"name": 3},
 	})
@@ -618,23 +618,23 @@ func Test_Array_MinAndMax(t *testing.T) {
 	child := Object().Field("name", String())
 	o1 := Object().Field("users", Array().Min(2).Max(3).Required().Validator(child))
 
-	_, res := testInput(o1, "users", []typed.Typed{createItem()})
+	_, res := testInput(o1, "users", []any{createItem()})
 	assert.Validation(t, res).Field("users", InvalidArrayMinLength(2))
 
 	// 4 items, too many
-	_, res = testInput(o1, "users", []typed.Typed{
+	_, res = testInput(o1, "users", []any{
 		createItem(), createItem(), createItem(), createItem(),
 	})
 	assert.Validation(t, res).Field("users", InvalidArrayMaxLength(3))
 
 	// 2 items, good
-	_, res = testInput(o1, "users", []typed.Typed{
+	_, res = testInput(o1, "users", []any{
 		createItem(), createItem(),
 	})
 	assert.Validation(t, res).FieldsHaveNoErrors("users")
 
 	// 3 items, good
-	_, res = testInput(o1, "users", []typed.Typed{
+	_, res = testInput(o1, "users", []any{
 		createItem(), createItem(), createItem(),
 	})
 	assert.Validation(t, res).FieldsHaveNoErrors("users")
@@ -648,26 +648,73 @@ func Test_Array_Range(t *testing.T) {
 	child := Object().Field("name", String())
 	o1 := Object().Field("users", Array().Range(2, 3).Required().Validator(child))
 
-	_, res := testInput(o1, "users", []typed.Typed{createItem()})
+	_, res := testInput(o1, "users", []any{createItem()})
 	assert.Validation(t, res).Field("users", InvalidArrayRangeLength(2, 3))
 
 	// 4 items, too many
-	_, res = testInput(o1, "users", []typed.Typed{
+	_, res = testInput(o1, "users", []any{
 		createItem(), createItem(), createItem(), createItem(),
 	})
 	assert.Validation(t, res).Field("users", InvalidArrayRangeLength(2, 3))
 
 	// 2 items, good
-	_, res = testInput(o1, "users", []typed.Typed{
+	_, res = testInput(o1, "users", []any{
 		createItem(), createItem(),
 	})
 	assert.Validation(t, res).FieldsHaveNoErrors("users")
 
 	// 3 items, good
-	_, res = testInput(o1, "users", []typed.Typed{
+	_, res = testInput(o1, "users", []any{
 		createItem(), createItem(), createItem(),
 	})
 	assert.Validation(t, res).FieldsHaveNoErrors("users")
+}
+
+func Test_Array_Strings(t *testing.T) {
+	child := String().Length(2, 4)
+	o1 := Object().
+		Field("users", Array().Required().Validator(child))
+
+	_, res := testInput(o1, "users", []any{"leto", 123, "2"})
+	assert.Validation(t, res).
+		Field("users.1", InvalidStringType()).
+		Field("users.2", InvalidStringLength(2, 4)).
+		FieldsHaveNoErrors("users.0")
+}
+
+func Test_Array_Bools(t *testing.T) {
+	child := Bool()
+	o1 := Object().
+		Field("users", Array().Required().Validator(child))
+
+	_, res := testInput(o1, "users", []any{true, 123, false})
+	assert.Validation(t, res).
+		Field("users.1", InvalidBoolType()).
+		FieldsHaveNoErrors("users.0", "users.2")
+}
+
+func Test_Array_Ints(t *testing.T) {
+	child := Int().Min(10)
+	o1 := Object().
+		Field("users", Array().Required().Validator(child))
+
+	_, res := testInput(o1, "users", []any{10, 9, false, 11.0})
+	assert.Validation(t, res).
+		Field("users.1", InvalidIntMin(10)).
+		Field("users.2", InvalidIntType()).
+		FieldsHaveNoErrors("users.0", "users.3")
+}
+
+func Test_Array_Floats(t *testing.T) {
+	child := Float().Min(10.1)
+	o1 := Object().
+		Field("users", Array().Required().Validator(child))
+
+	_, res := testInput(o1, "users", []any{10.1, 10.0, false})
+	assert.Validation(t, res).
+		Field("users.1", InvalidFloatMin(10.1)).
+		Field("users.2", InvalidFloatType()).
+		FieldsHaveNoErrors("users.0")
 }
 
 func Test_Any_Required(t *testing.T) {

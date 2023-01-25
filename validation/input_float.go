@@ -40,7 +40,7 @@ func (v *FloatValidator) argsToTyped(args *fasthttp.Args, t typed.Typed) {
 	}
 }
 
-func (v *FloatValidator) validate(object typed.Typed, input typed.Typed, res *Result) {
+func (v *FloatValidator) validateObjectField(object typed.Typed, input typed.Typed, res *Result) {
 	field := v.field
 	fieldName := field.Name
 	value, exists := object.FloatIf(fieldName)
@@ -58,10 +58,24 @@ func (v *FloatValidator) validate(object typed.Typed, input typed.Typed, res *Re
 		return
 	}
 
+	object[fieldName] = v.validateValue(field, value, object, input, res)
+}
+
+func (v *FloatValidator) validateArrayValue(value any, res *Result) {
+	field := v.field
+	flt, ok := value.(float64)
+	if !ok {
+		res.AddInvalidField(field, v.errType)
+		return
+	}
+	v.validateValue(v.field, flt, nil, nil, res)
+}
+
+func (v *FloatValidator) validateValue(field Field, value float64, object typed.Typed, input typed.Typed, res *Result) float64 {
 	for _, rule := range v.rules {
 		value = rule.Validate(field, value, object, input, res)
 	}
-	object[fieldName] = value
+	return value
 }
 
 func (v *FloatValidator) addField(fieldName string) InputValidator {

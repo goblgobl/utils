@@ -225,3 +225,11 @@ func Choice[T any](valid []T) any {
 		Valid: valid,
 	}
 }
+
+type DataValue[T any] struct {
+	Value T `json:"value"`
+}
+
+func Value[T any](value T) DataValue[T] {
+	return DataValue[T]{value}
+}

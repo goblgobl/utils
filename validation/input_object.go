@@ -23,7 +23,7 @@ func (o *ObjectValidator) Field(fieldName string, validator InputValidator) *Obj
 func (o *ObjectValidator) Validate(input typed.Typed, res *Result) bool {
 	len := res.Len()
 	for _, validator := range o.validators {
-		validator.validate(input, input, res)
+		validator.validateObjectField(input, input, res)
 	}
 	return res.Len() == len
 }
@@ -39,11 +39,15 @@ func (o *ObjectValidator) ValidateArgs(args *fasthttp.Args, res *Result) (typed.
 
 // called when the object is nested, unlike the public Validate which is
 // the main entry point into validation.
-func (v *ObjectValidator) validate(object typed.Typed, input typed.Typed, res *Result) {
+func (v *ObjectValidator) validateObjectField(object typed.Typed, input typed.Typed, res *Result) {
 	object = object.Object(v.field.Name)
 	for _, validator := range v.validators {
-		validator.validate(object, input, res)
+		validator.validateObjectField(object, input, res)
 	}
+}
+
+func (v *ObjectValidator) validateArrayValue(value any, res *Result) {
+	v.Validate(value.(typed.Typed), res)
 }
 
 func (v *ObjectValidator) argsToTyped(args *fasthttp.Args, t typed.Typed) {

@@ -7,7 +7,7 @@ import (
 
 type ArrayRule interface {
 	clone() ArrayRule
-	Validate(field Field, value []typed.Typed, object typed.Typed, input typed.Typed, res *Result) []typed.Typed
+	Validate(field Field, values []any, object typed.Typed, input typed.Typed, res *Result) []any
 }
 
 func Array() *ArrayValidator {
@@ -22,7 +22,7 @@ type ArrayValidator struct {
 	required  bool
 	dflt      []typed.Typed
 	rules     []ArrayRule
-	validator *ObjectValidator
+	validator InputValidator
 	errReq    Invalid
 	errType   Invalid
 }
@@ -31,22 +31,23 @@ func (v *ArrayValidator) argsToTyped(args *fasthttp.Args, t typed.Typed) {
 	panic("ArrayValidator.argstoType not supported")
 }
 
-func (v *ArrayValidator) validate(object typed.Typed, input typed.Typed, res *Result) {
+func (v *ArrayValidator) validateObjectField(object typed.Typed, input typed.Typed, res *Result) {
 	field := v.field
 	fieldName := field.Name
 
-	values, exists := object.ObjectsIf(fieldName)
+	value, exists := object[fieldName]
 	if !exists {
-		if _, exists := object[fieldName]; !exists {
-			if v.required {
-				res.AddInvalidField(field, v.errReq)
-			} else if dflt := v.dflt; dflt != nil {
-				object[fieldName] = dflt
-			}
-			return
+		if v.required {
+			res.AddInvalidField(field, v.errReq)
+		} else if dflt := v.dflt; dflt != nil {
+			object[fieldName] = dflt
 		}
-		res.AddInvalidField(field, v.errType)
 		return
+	}
+
+	values, ok := value.([]any)
+	if !ok {
+		res.AddInvalidField(field, v.errType)
 	}
 
 	// first we apply validation on the array itself (e.g. min length)
@@ -55,24 +56,25 @@ func (v *ArrayValidator) validate(object typed.Typed, input typed.Typed, res *Re
 	}
 
 	// next we apply validation on every item within the array
-	res.BeginArray()
 	validator := v.validator
+	res.BeginArray()
 	for i, value := range values {
 		res.ArrayIndex(i)
-		validator.Validate(value, res)
+		validator.validateArrayValue(value, res)
 	}
 	res.EndArray()
+}
+
+func (v *ArrayValidator) validateArrayValue(value any, res *Result) {
+	panic("nested array validation isn't implemented yet")
 }
 
 func (v *ArrayValidator) addField(fieldName string) InputValidator {
 	field := v.field.add(fieldName)
 
-	// add an empty field, so that when we add an error to a result,
-	// we can quickly detect which part of the field path needs to
-	// be replaced with the index
 	validator := v.validator.
 		addField("").
-		addField(fieldName).(*ObjectValidator)
+		addField(fieldName)
 
 	rules := make([]ArrayRule, len(v.rules))
 	for i, rule := range v.rules {
@@ -100,7 +102,7 @@ func (v *ArrayValidator) Default(value []typed.Typed) *ArrayValidator {
 	return v
 }
 
-func (v *ArrayValidator) Validator(validator *ObjectValidator) *ArrayValidator {
+func (v *ArrayValidator) Validator(validator InputValidator) *ArrayValidator {
 	v.validator = validator
 	return v
 }
@@ -135,7 +137,7 @@ type ArrayMin struct {
 	err Invalid
 }
 
-func (r ArrayMin) Validate(field Field, values []typed.Typed, object typed.Typed, input typed.Typed, res *Result) []typed.Typed {
+func (r ArrayMin) Validate(field Field, values []any, object typed.Typed, input typed.Typed, res *Result) []any {
 	if len(values) < r.min {
 		res.AddInvalidField(field, r.err)
 	}
@@ -154,7 +156,7 @@ type ArrayMax struct {
 	err Invalid
 }
 
-func (r ArrayMax) Validate(field Field, values []typed.Typed, object typed.Typed, input typed.Typed, res *Result) []typed.Typed {
+func (r ArrayMax) Validate(field Field, values []any, object typed.Typed, input typed.Typed, res *Result) []any {
 	if len(values) > r.max {
 		res.AddInvalidField(field, r.err)
 	}
@@ -174,7 +176,7 @@ type ArrayRange struct {
 	err Invalid
 }
 
-func (r ArrayRange) Validate(field Field, values []typed.Typed, object typed.Typed, input typed.Typed, res *Result) []typed.Typed {
+func (r ArrayRange) Validate(field Field, values []any, object typed.Typed, input typed.Typed, res *Result) []any {
 	if len(values) < r.min || len(values) > r.max {
 		res.AddInvalidField(field, r.err)
 	}

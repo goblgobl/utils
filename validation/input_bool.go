@@ -41,7 +41,7 @@ func (v *BoolValidator) argsToTyped(args *fasthttp.Args, t typed.Typed) {
 	}
 }
 
-func (v *BoolValidator) validate(object typed.Typed, input typed.Typed, res *Result) {
+func (v *BoolValidator) validateObjectField(object typed.Typed, input typed.Typed, res *Result) {
 	field := v.field
 	fieldName := field.Name
 
@@ -59,10 +59,24 @@ func (v *BoolValidator) validate(object typed.Typed, input typed.Typed, res *Res
 		return
 	}
 
+	object[fieldName] = v.validateValue(field, value, object, input, res)
+}
+
+func (v *BoolValidator) validateArrayValue(value any, res *Result) {
+	field := v.field
+	bl, ok := value.(bool)
+	if !ok {
+		res.AddInvalidField(field, v.errType)
+		return
+	}
+	v.validateValue(field, bl, nil, nil, res)
+}
+
+func (v *BoolValidator) validateValue(field Field, value bool, object typed.Typed, input typed.Typed, res *Result) bool {
 	for _, rule := range v.rules {
 		value = rule.Validate(field, value, object, input, res)
 	}
-	object[fieldName] = value
+	return value
 }
 
 func (v *BoolValidator) addField(fieldName string) InputValidator {

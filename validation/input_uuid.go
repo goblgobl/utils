@@ -28,7 +28,7 @@ func (v *UUIDValidator) argsToTyped(args *fasthttp.Args, t typed.Typed) {
 	}
 }
 
-func (v *UUIDValidator) validate(object typed.Typed, input typed.Typed, res *Result) {
+func (v *UUIDValidator) validateObjectField(object typed.Typed, input typed.Typed, res *Result) {
 	field := v.field
 	fieldName := field.Name
 
@@ -44,7 +44,20 @@ func (v *UUIDValidator) validate(object typed.Typed, input typed.Typed, res *Res
 		}
 		return
 	}
+	v.validateValue(field, value, object, input, res)
+}
 
+func (v *UUIDValidator) validateArrayValue(value any, res *Result) {
+	field := v.field
+	str, ok := value.(string)
+	if !ok {
+		res.AddInvalidField(field, v.errType)
+		return
+	}
+	v.validateValue(field, str, nil, nil, res)
+}
+
+func (v *UUIDValidator) validateValue(field Field, value string, object typed.Typed, input typed.Typed, res *Result) {
 	if !uuid.IsValid(value) {
 		res.AddInvalidField(field, v.errType)
 	}

@@ -152,27 +152,7 @@ func (t Typed) IntIf(key string) (int, bool) {
 	if exists == false {
 		return 0, false
 	}
-
-	switch t := value.(type) {
-	case int:
-		return t, true
-	case int16:
-		return int(t), true
-	case int32:
-		return int(t), true
-	case int64:
-		return int(t), true
-	case float64:
-		nt := int(t)
-		if t == float64(nt) {
-			return nt, true
-		}
-		return 0, false
-	case string:
-		i, err := strconv.Atoi(t)
-		return i, err == nil
-	}
-	return 0, false
+	return NumericToInt(value)
 }
 
 func (t Typed) Float(key string) float64 {
@@ -908,4 +888,27 @@ func (t Typed) getmap(key string) (raw map[string]any, exists bool) {
 	}
 	raw, exists = value.(map[string]any)
 	return
+}
+
+func NumericToInt(value any) (int, bool) {
+	switch t := value.(type) {
+	case int:
+		return t, true
+	case int16:
+		return int(t), true
+	case int32:
+		return int(t), true
+	case int64:
+		return int(t), true
+	case float64:
+		nt := int(t)
+		if t == float64(nt) {
+			return nt, true
+		}
+		return 0, false
+	case string:
+		i, err := strconv.Atoi(t)
+		return i, err == nil
+	}
+	return 0, false
 }
