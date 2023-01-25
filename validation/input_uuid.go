@@ -79,6 +79,12 @@ func (v *UUIDValidator) Required() *UUIDValidator {
 	return v
 }
 
+// used when we clone a field that was required, and we want the clone to not be required
+func (v *UUIDValidator) NotRequired() *UUIDValidator {
+	v.required = false
+	return v
+}
+
 func (v *UUIDValidator) Default(value string) *UUIDValidator {
 	v.dflt = value
 	return v

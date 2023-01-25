@@ -102,6 +102,12 @@ func (v *BoolValidator) Required() *BoolValidator {
 	return v
 }
 
+// used when we clone a field that was required, and we want the clone to not be required
+func (v *BoolValidator) NotRequired() *BoolValidator {
+	v.required = false
+	return v
+}
+
 func (v *BoolValidator) Default(value bool) *BoolValidator {
 	v.dflt = value
 	return v

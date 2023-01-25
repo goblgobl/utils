@@ -101,6 +101,12 @@ func (v *IntValidator) Required() *IntValidator {
 	return v
 }
 
+// used when we clone a field that was required, and we want the clone to not be required
+func (v *IntValidator) NotRequired() *IntValidator {
+	v.required = false
+	return v
+}
+
 func (v *IntValidator) Default(value int) *IntValidator {
 	v.dflt = value
 	return v

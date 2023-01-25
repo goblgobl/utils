@@ -15,17 +15,17 @@ func Test_String_Required(t *testing.T) {
 	f2 := String().Required()
 	o := Object().
 		Field("name", f1).Field("name_clone", f1).
-		Field("code", f2).Field("code_clone", f2)
+		Field("code", f2).Field("code_clone", f2).Field("code_not_required", f2.NotRequired())
 
 	_, res := testInput(o)
 	assert.Validation(t, res).
-		FieldsHaveNoErrors("name", "name_clone").
+		FieldsHaveNoErrors("name", "name_clone", "code_not_required").
 		Field("code", Required()).
 		Field("code_clone", Required())
 
 	_, res = testInput(o, "code", "1", "code_clone", "1")
 	assert.Validation(t, res).
-		FieldsHaveNoErrors("code", "name", "code_clone", "name_clone")
+		FieldsHaveNoErrors("code", "name", "code_clone", "name_clone", "code_not_required")
 }
 
 func Test_String_Default(t *testing.T) {
@@ -215,18 +215,19 @@ func Test_String_Multiple_Transformer(t *testing.T) {
 }
 
 func Test_Int_Required(t *testing.T) {
+	f2 := Int().Required()
 	o := Object().
 		Field("name", Int()).
-		Field("code", Int().Required())
+		Field("code", f2).Field("code_not_required", f2.NotRequired())
 
 	_, res := testInput(o)
 	assert.Validation(t, res).
-		FieldsHaveNoErrors("name").
+		FieldsHaveNoErrors("name", "code_not_required").
 		Field("code", Required())
 
 	_, res = testInput(o, "code", 1)
 	assert.Validation(t, res).
-		FieldsHaveNoErrors("code", "name")
+		FieldsHaveNoErrors("code", "name", "code_not_required")
 }
 
 func Test_Int_Type(t *testing.T) {
@@ -329,23 +330,24 @@ func Test_Int_Args(t *testing.T) {
 }
 
 func Test_Float_Required(t *testing.T) {
+	f2 := Float().Required()
 	o := Object().
 		Field("name", Float()).
-		Field("code", Float().Required())
+		Field("code", f2).Field("code_not_required", f2.NotRequired())
 
 	_, res := testInput(o)
 	assert.Validation(t, res).
-		FieldsHaveNoErrors("name").
+		FieldsHaveNoErrors("name", "code_not_required").
 		Field("code", Required())
 
 	_, res = testInput(o, "code", 1.2)
 	assert.Validation(t, res).
-		FieldsHaveNoErrors("code", "name")
+		FieldsHaveNoErrors("code", "name", "code_not_required")
 
 	// accepts ints
 	_, res = testInput(o, "code", 2)
 	assert.Validation(t, res).
-		FieldsHaveNoErrors("code", "name")
+		FieldsHaveNoErrors("code", "name", "code_not_required")
 }
 
 func Test_Float_Type(t *testing.T) {
@@ -448,18 +450,19 @@ func Test_Float_Args(t *testing.T) {
 }
 
 func Test_Bool_Required(t *testing.T) {
+	f2 := Bool().Required()
 	o := Object().
 		Field("required", Bool()).
-		Field("agree", Bool().Required())
+		Field("agree", f2).Field("agree_not_required", f2.NotRequired())
 
 	_, res := testInput(o)
 	assert.Validation(t, res).
-		FieldsHaveNoErrors("required").
+		FieldsHaveNoErrors("required", "agree_not_required").
 		Field("agree", Required())
 
 	_, res = testInput(o, "agree", true)
 	assert.Validation(t, res).
-		FieldsHaveNoErrors("required", "agree")
+		FieldsHaveNoErrors("required", "agree", "agree_not_required")
 }
 
 func Test_Bool_Type(t *testing.T) {
@@ -535,17 +538,17 @@ func Test_UUID_Required(t *testing.T) {
 	f2 := UUID().Required()
 	o := Object().
 		Field("id", f1).Field("id_clone", f1).
-		Field("parent_id", f2).Field("parent_id_clone", f2)
+		Field("parent_id", f2).Field("parent_id_clone", f2).Field("parent_id_clone_not_required", f2.NotRequired())
 
 	_, res := testInput(o)
 	assert.Validation(t, res).
-		FieldsHaveNoErrors("id", "id_clone").
+		FieldsHaveNoErrors("id", "id_clone", "parent_id_clone_not_required").
 		Field("parent_id", Required()).
 		Field("parent_id_clone", Required())
 
 	_, res = testInput(o, "parent_id", "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF", "parent_id_clone", "00000000-0000-0000-0000-000000000000")
 	assert.Validation(t, res).
-		FieldsHaveNoErrors("parent_id", "id", "parent_id_clone", "id_clone")
+		FieldsHaveNoErrors("parent_id", "id", "parent_id_clone", "id_clone", "parent_id_clone_not_required")
 }
 
 func Test_UUID_Type(t *testing.T) {
@@ -718,18 +721,19 @@ func Test_Array_Floats(t *testing.T) {
 }
 
 func Test_Any_Required(t *testing.T) {
+	f2 := Any().Required()
 	o := Object().
 		Field("name", Any()).
-		Field("code", Any().Required())
+		Field("code", f2).Field("code_not_required", f2.NotRequired())
 
 	_, res := testInput(o)
 	assert.Validation(t, res).
-		FieldsHaveNoErrors("name").
+		FieldsHaveNoErrors("name", "code_not_required").
 		Field("code", Required())
 
 	_, res = testInput(o, "code", 1)
 	assert.Validation(t, res).
-		FieldsHaveNoErrors("code", "name")
+		FieldsHaveNoErrors("code", "name", "code_not_required")
 }
 
 func Test_Any_Default(t *testing.T) {

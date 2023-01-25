@@ -101,6 +101,12 @@ func (v *FloatValidator) Required() *FloatValidator {
 	return v
 }
 
+// used when we clone a field that was required, and we want the clone to not be required
+func (v *FloatValidator) NotRequired() *FloatValidator {
+	v.required = false
+	return v
+}
+
 func (v *FloatValidator) Default(value float64) *FloatValidator {
 	v.dflt = value
 	return v

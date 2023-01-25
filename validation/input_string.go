@@ -111,6 +111,12 @@ func (v *StringValidator) Required() *StringValidator {
 	return v
 }
 
+// used when we clone a field that was required, and we want the clone to not be required
+func (v *StringValidator) NotRequired() *StringValidator {
+	v.required = false
+	return v
+}
+
 func (v *StringValidator) Default(value string) *StringValidator {
 	v.dflt = value
 	return v
