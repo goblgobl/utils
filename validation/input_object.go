@@ -5,6 +5,8 @@ import (
 	"src.goblgobl.com/utils/typed"
 )
 
+type ObjectFuncValidator func(field Field, object typed.Typed, input typed.Typed, res *Result) typed.Typed
+
 func Object() *ObjectValidator {
 	return &ObjectValidator{
 		errReq:  Required(),
@@ -18,6 +20,7 @@ type ObjectValidator struct {
 	errReq     Invalid
 	errType    Invalid
 	dflt       typed.Typed
+	fn         ObjectFuncValidator
 	validators []InputValidator
 }
 
@@ -37,17 +40,20 @@ func (v *ObjectValidator) NotRequired() *ObjectValidator {
 	return v
 }
 
-func (o *ObjectValidator) Field(fieldName string, validator InputValidator) *ObjectValidator {
-	o.validators = append(o.validators, validator.addField(fieldName))
-	return o
+func (v *ObjectValidator) Func(fn ObjectFuncValidator) *ObjectValidator {
+	v.fn = fn
+	return v
+}
+
+func (v *ObjectValidator) Field(fieldName string, validator InputValidator) *ObjectValidator {
+	v.validators = append(v.validators, validator.addField(fieldName))
+	return v
 }
 
 // object validation called on the root
-func (o *ObjectValidator) Validate(input typed.Typed, res *Result) bool {
+func (v *ObjectValidator) Validate(input typed.Typed, res *Result) bool {
 	len := res.Len()
-	for _, validator := range o.validators {
-		validator.validateObjectField(input, input, res)
-	}
+	v.validateValue(v.field, input, input, res)
 	return res.Len() == len
 }
 
@@ -80,9 +86,7 @@ func (v *ObjectValidator) validateObjectField(object typed.Typed, input typed.Ty
 		return
 	}
 
-	for _, validator := range v.validators {
-		validator.validateObjectField(value, input, res)
-	}
+	v.validateValue(field, value, input, res)
 }
 
 func (v *ObjectValidator) validateArrayValue(value any, res *Result) {
@@ -93,6 +97,18 @@ func (v *ObjectValidator) validateArrayValue(value any, res *Result) {
 		return
 	}
 	v.Validate(typed.Typed(t), res)
+}
+
+func (v *ObjectValidator) validateValue(field Field, value typed.Typed, input typed.Typed, res *Result) any {
+	for _, validator := range v.validators {
+		validator.validateObjectField(value, input, res)
+	}
+
+	if fn := v.fn; fn != nil {
+		value = fn(field, value, input, res)
+	}
+
+	return value
 }
 
 func (v *ObjectValidator) argsToTyped(args *fasthttp.Args, t typed.Typed) {
@@ -106,6 +122,7 @@ func (v *ObjectValidator) addField(fieldName string) InputValidator {
 	}
 	field := v.field.add(fieldName)
 	return &ObjectValidator{
+		fn:         v.fn,
 		field:      field,
 		required:   v.required,
 		dflt:       v.dflt,

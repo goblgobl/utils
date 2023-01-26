@@ -37,7 +37,7 @@ func Test_Result_NoField_NoData(t *testing.T) {
 	r := NewResult(4)
 	assert.True(t, r.IsValid())
 
-	r.AddInvalid(Required())
+	r.Add(Required())
 	assert.False(t, r.IsValid())
 
 	invalid := r.Errors()[0].(Invalid)
@@ -48,7 +48,7 @@ func Test_Result_NoField_NoData(t *testing.T) {
 
 func Test_Result_NoField_Data(t *testing.T) {
 	r := NewResult(4)
-	r.AddInvalid(InvalidIntMin(33))
+	r.Add(InvalidIntMin(33))
 	invalid := r.Errors()[0].(Invalid)
 	assert.Equal(t, invalid.Data.(DataMin).Min.(int), 33)
 	assert.Equal(t, invalid.Code, 1006)

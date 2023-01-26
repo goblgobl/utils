@@ -611,6 +611,16 @@ func Test_Nested_Object_Default(t *testing.T) {
 	assert.Equal(t, data.Object("user").Int("id"), 3)
 }
 
+func Test_Object_Func(t *testing.T) {
+	o1 := Object().Field("user", Object().Func(func(field Field, value typed.Typed, input typed.Typed, res *Result) typed.Typed {
+		res.AddInvalidFieldPlus(field, InvalidStringPattern(), ".name")
+		return value
+	}))
+
+	_, res := testInput(o1, "user", map[string]any{"name": "leto"})
+	assert.Validation(t, res).Field("user.name", InvalidStringPattern())
+}
+
 func Test_Array_Objects(t *testing.T) {
 	child := Object().Field("name", String().Required())
 	o1 := Object().
