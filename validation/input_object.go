@@ -5,7 +5,7 @@ import (
 	"src.goblgobl.com/utils/typed"
 )
 
-type ObjectFuncValidator func(field Field, object typed.Typed, input typed.Typed, res *Result) typed.Typed
+type ObjectFuncValidator func(field Field, object typed.Typed, input typed.Typed, res *Result) any
 
 func Object() *ObjectValidator {
 	return &ObjectValidator{
@@ -105,7 +105,7 @@ func (v *ObjectValidator) validateValue(field Field, value typed.Typed, input ty
 	}
 
 	if fn := v.fn; fn != nil {
-		value = fn(field, value, input, res)
+		return fn(field, value, input, res)
 	}
 
 	return value

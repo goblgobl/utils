@@ -41,8 +41,10 @@ func (v *BoolValidator) argsToTyped(args *fasthttp.Args, t typed.Typed) {
 	}
 }
 
-func (v *BoolValidator) validateObjectField(object typed.Typed, input typed.Typed, res *Result) {
-	field := v.field
+// This is exposed in case some caller wants to execute the validator directly
+// This most likely happens when the object is being manually validated with the
+// use of an object validator (i.e. Object().Func(...))
+func (v *BoolValidator) ValidateObjectField(field Field, object typed.Typed, input typed.Typed, res *Result) {
 	fieldName := field.Name
 
 	value, exists := object.BoolIf(fieldName)
@@ -60,6 +62,11 @@ func (v *BoolValidator) validateObjectField(object typed.Typed, input typed.Type
 	}
 
 	object[fieldName] = v.validateValue(field, value, object, input, res)
+}
+
+// this is called internally when we're validating an object and the nested fields
+func (v *BoolValidator) validateObjectField(object typed.Typed, input typed.Typed, res *Result) {
+	v.ValidateObjectField(v.field, object, input, res)
 }
 
 func (v *BoolValidator) validateArrayValue(value any, res *Result) {

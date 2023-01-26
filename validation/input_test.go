@@ -613,7 +613,7 @@ func Test_Nested_Object_Default(t *testing.T) {
 
 func Test_Object_Func(t *testing.T) {
 	userField := BuildField("user.name")
-	o1 := Object().Field("user", Object().Func(func(field Field, value typed.Typed, input typed.Typed, res *Result) typed.Typed {
+	o1 := Object().Field("user", Object().Func(func(field Field, value typed.Typed, input typed.Typed, res *Result) any {
 		res.AddInvalidField(userField, InvalidStringPattern())
 		return value
 	}))
