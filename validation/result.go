@@ -33,29 +33,15 @@ func (r Result) Len() uint64 {
 	return r.len
 }
 func (r *Result) AddInvalidField(field Field, invalid Invalid) {
-	r.AddInvalidFieldPlus(field, invalid, "")
-}
-
-// This is rarely called directly (AddInvalidField is used almost all the time).
-// It's meant for the case where there's a custom object Validator (created via
-// Object().Func(func(field Field, value typed.Typed... )))
-// Say we have custom validator for a "user". Our field is just "user" but
-// we want to write a validation message for "user.name", this function lets
-// us append the ".name" to the "user" field.
-func (r *Result) AddInvalidFieldPlus(field Field, invalid Invalid, suffix string) {
 	fieldName := field.Flat
 
-	if r.arrayCount == -1 {
-		if suffix != "" {
-			fieldName += suffix
-		}
-	} else {
+	if r.arrayCount != -1 {
 		// We're inside of an array, we need to create field name dynamically
 		// TODO: optimize this code
 		var w strings.Builder
 
 		// Over allocate a little so that we likely won't have to allocate + copy.
-		w.Grow(len(field.Name) + 20 + len(suffix))
+		w.Grow(len(field.Name) + 20)
 
 		indexIndex := 0
 		indexes := r.arrayIndexes
@@ -67,9 +53,6 @@ func (r *Result) AddInvalidFieldPlus(field Field, invalid Invalid, suffix string
 			} else {
 				w.WriteString(part)
 			}
-		}
-		if suffix != "" {
-			w.WriteString(suffix)
 		}
 
 		// [1:] to strip out the leading .

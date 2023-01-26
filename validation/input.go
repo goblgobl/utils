@@ -78,6 +78,26 @@ type Field struct {
 	Path []string
 }
 
+// Most cases, this library builds the "correct" field, taking care of indexed
+// values and nesting. In some advance cases, namely when fully manual validation
+// is being invoked (usually via the Object().Func(...) validator) the caller
+// might need a way to build arbitrary field names, which still support nesting
+// and array indexes.
+func BuildField(pattern string) Field {
+	path := strings.Split(pattern, ".")
+	for i, part := range path {
+		if part == "#" {
+			path[i] = ""
+		}
+	}
+
+	return Field{
+		Path: path,
+		Flat: pattern,
+		Name: path[len(path)-1],
+	}
+}
+
 func NewField(name string) Field {
 	return Field{
 		Name: name,
