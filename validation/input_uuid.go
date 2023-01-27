@@ -31,7 +31,7 @@ func (v *UUIDValidator) argsToTyped(args *fasthttp.Args, t typed.Typed) {
 // This is exposed in case some caller wants to execute the validator directly
 // This most likely happens when the object is being manually validated with the
 // use of an object validator (i.e. Object().Func(...))
-func (v *UUIDValidator) ValidateObjectField(field Field, object typed.Typed, input typed.Typed, res *Result) {
+func (v *UUIDValidator) ValidateObjectField(field Field, object typed.Typed, input typed.Typed, res *Result) string {
 	fieldName := field.Name
 
 	value, exists := object.StringIf(fieldName)
@@ -44,23 +44,27 @@ func (v *UUIDValidator) ValidateObjectField(field Field, object typed.Typed, inp
 		if dflt := v.dflt; dflt != "" {
 			object[fieldName] = dflt
 		}
-		return
+		return value
 	}
+	// The UUID validator never transforms the value in any way, so we don't have
+	// to write it back into object
 	v.validateValue(field, value, object, input, res)
+	return value
 }
 
 func (v *UUIDValidator) validateObjectField(object typed.Typed, input typed.Typed, res *Result) {
 	v.ValidateObjectField(v.field, object, input, res)
 }
 
-func (v *UUIDValidator) validateArrayValue(value any, res *Result) {
+func (v *UUIDValidator) validateArrayValue(value any, res *Result) any {
 	field := v.field
 	str, ok := value.(string)
 	if !ok {
 		res.AddInvalidField(field, v.errType)
-		return
+		return str
 	}
 	v.validateValue(field, str, nil, nil, res)
+	return str
 }
 
 func (v *UUIDValidator) validateValue(field Field, value string, object typed.Typed, input typed.Typed, res *Result) {

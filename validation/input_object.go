@@ -66,10 +66,10 @@ func (o *ObjectValidator) ValidateArgs(args *fasthttp.Args, res *Result) (typed.
 	return input, o.Validate(input, res)
 }
 
-// called when the object is nested, unlike the public Validate which is
-// the main entry point into validation.
-func (v *ObjectValidator) validateObjectField(object typed.Typed, input typed.Typed, res *Result) {
-	field := v.field
+// This is exposed in case some caller wants to execute the validator directly
+// This most likely happens when the object is being manually validated with the
+// use of an object validator (i.e. Object().Func(...))
+func (v *ObjectValidator) ValidateObjectField(field Field, object typed.Typed, input typed.Typed, res *Result) {
 	fieldName := field.Name
 
 	value, exists := object.ObjectIf(fieldName)
@@ -89,14 +89,21 @@ func (v *ObjectValidator) validateObjectField(object typed.Typed, input typed.Ty
 	v.validateValue(field, value, input, res)
 }
 
-func (v *ObjectValidator) validateArrayValue(value any, res *Result) {
+// called when the object is nested, unlike the public Validate which is
+// the main entry point into validation.
+func (v *ObjectValidator) validateObjectField(object typed.Typed, input typed.Typed, res *Result) {
+	v.ValidateObjectField(v.field, object, input, res)
+}
+
+func (v *ObjectValidator) validateArrayValue(value any, res *Result) any {
 	field := v.field
 	t, ok := value.(map[string]any)
 	if !ok {
 		res.AddInvalidField(field, v.errType)
-		return
+		return nil
 	}
-	v.Validate(typed.Typed(t), res)
+	input := typed.Typed(t)
+	return v.validateValue(field, input, input, res)
 }
 
 func (v *ObjectValidator) validateValue(field Field, value typed.Typed, input typed.Typed, res *Result) any {
@@ -113,6 +120,26 @@ func (v *ObjectValidator) validateValue(field Field, value typed.Typed, input ty
 
 func (v *ObjectValidator) argsToTyped(args *fasthttp.Args, t typed.Typed) {
 	panic("ObjectValidator.argstoType not supported")
+}
+
+// Another advanced API largely used in conjuction with manual validation via
+// the use of Object().Func(...). Meant to be used when we have an existing
+// ObjectValidator which we want to force into a specific field.
+// For example, we create a userValidator = Object().Field("name", String().Required())
+// Which would, on its own, create an error with the field "name".
+// But if we wanted to force this to have a different field, we'd create a new
+// validator using Addfield:
+//
+//	userListValidator = userValidator.AddField(BuildField("users.#.add"))
+//
+// which would then create a validation error with a field "users.#.add.name"
+func (v *ObjectValidator) AddField(field Field) *ObjectValidator {
+	validator := v
+	path := field.Path
+	for i := len(path) - 1; i >= 0; i-- {
+		validator = validator.addField(path[i]).(*ObjectValidator)
+	}
+	return validator
 }
 
 func (v *ObjectValidator) addField(fieldName string) InputValidator {

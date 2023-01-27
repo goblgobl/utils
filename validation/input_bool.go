@@ -44,7 +44,7 @@ func (v *BoolValidator) argsToTyped(args *fasthttp.Args, t typed.Typed) {
 // This is exposed in case some caller wants to execute the validator directly
 // This most likely happens when the object is being manually validated with the
 // use of an object validator (i.e. Object().Func(...))
-func (v *BoolValidator) ValidateObjectField(field Field, object typed.Typed, input typed.Typed, res *Result) {
+func (v *BoolValidator) ValidateObjectField(field Field, object typed.Typed, input typed.Typed, res *Result) bool {
 	fieldName := field.Name
 
 	value, exists := object.BoolIf(fieldName)
@@ -54,14 +54,17 @@ func (v *BoolValidator) ValidateObjectField(field Field, object typed.Typed, inp
 				res.AddInvalidField(field, v.errReq)
 			} else if dflt := v.dflt; dflt != false {
 				object[fieldName] = dflt
+				return dflt
 			}
-			return
+			return value
 		}
 		res.AddInvalidField(field, v.errType)
-		return
+		return value
 	}
 
-	object[fieldName] = v.validateValue(field, value, object, input, res)
+	validated := v.validateValue(field, value, object, input, res)
+	object[fieldName] = validated
+	return validated
 }
 
 // this is called internally when we're validating an object and the nested fields
@@ -69,14 +72,14 @@ func (v *BoolValidator) validateObjectField(object typed.Typed, input typed.Type
 	v.ValidateObjectField(v.field, object, input, res)
 }
 
-func (v *BoolValidator) validateArrayValue(value any, res *Result) {
+func (v *BoolValidator) validateArrayValue(value any, res *Result) any {
 	field := v.field
 	bl, ok := value.(bool)
 	if !ok {
 		res.AddInvalidField(field, v.errType)
-		return
+		return false
 	}
-	v.validateValue(field, bl, nil, nil, res)
+	return v.validateValue(field, bl, nil, nil, res)
 }
 
 func (v *BoolValidator) validateValue(field Field, value bool, object typed.Typed, input typed.Typed, res *Result) bool {

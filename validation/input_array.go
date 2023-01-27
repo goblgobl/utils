@@ -10,6 +10,8 @@ type ArrayRule interface {
 	Validate(field Field, values []any, object typed.Typed, input typed.Typed, res *Result) []any
 }
 
+type ArrayTransformer func(values []any) any
+
 func Array() *ArrayValidator {
 	return &ArrayValidator{
 		errReq:  Required(),
@@ -18,13 +20,14 @@ func Array() *ArrayValidator {
 }
 
 type ArrayValidator struct {
-	field     Field
-	required  bool
-	dflt      []typed.Typed
-	rules     []ArrayRule
-	validator InputValidator
-	errReq    Invalid
-	errType   Invalid
+	field       Field
+	required    bool
+	dflt        []typed.Typed
+	rules       []ArrayRule
+	validator   InputValidator
+	transformer ArrayTransformer
+	errReq      Invalid
+	errType     Invalid
 }
 
 func (v *ArrayValidator) argsToTyped(args *fasthttp.Args, t typed.Typed) {
@@ -60,12 +63,16 @@ func (v *ArrayValidator) validateObjectField(object typed.Typed, input typed.Typ
 	res.BeginArray()
 	for i, value := range values {
 		res.ArrayIndex(i)
-		validator.validateArrayValue(value, res)
+		values[i] = validator.validateArrayValue(value, res)
 	}
 	res.EndArray()
+
+	if t := v.transformer; t != nil {
+		object[fieldName] = t(values)
+	}
 }
 
-func (v *ArrayValidator) validateArrayValue(value any, res *Result) {
+func (v *ArrayValidator) validateArrayValue(value any, res *Result) any {
 	panic("nested array validation isn't implemented yet")
 }
 
@@ -82,13 +89,14 @@ func (v *ArrayValidator) addField(fieldName string) InputValidator {
 	}
 
 	return &ArrayValidator{
-		field:     field,
-		required:  v.required,
-		dflt:      v.dflt,
-		rules:     rules,
-		validator: validator,
-		errReq:    v.errReq,
-		errType:   v.errType,
+		field:       field,
+		required:    v.required,
+		dflt:        v.dflt,
+		rules:       rules,
+		validator:   validator,
+		errReq:      v.errReq,
+		errType:     v.errType,
+		transformer: v.transformer,
 	}
 }
 
@@ -110,6 +118,11 @@ func (v *ArrayValidator) Default(value []typed.Typed) *ArrayValidator {
 
 func (v *ArrayValidator) Validator(validator InputValidator) *ArrayValidator {
 	v.validator = validator
+	return v
+}
+
+func (v *ArrayValidator) Transformer(transformer ArrayTransformer) *ArrayValidator {
+	v.transformer = transformer
 	return v
 }
 

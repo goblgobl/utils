@@ -32,8 +32,10 @@ func (v *AnyValidator) argsToTyped(args *fasthttp.Args, t typed.Typed) {
 	}
 }
 
-func (v *AnyValidator) validateObjectField(object typed.Typed, input typed.Typed, res *Result) {
-	field := v.field
+// This is exposed in case some caller wants to execute the validator directly
+// This most likely happens when the object is being manually validated with the
+// use of an object validator (i.e. Object().Func(...))
+func (v *AnyValidator) ValidateObjectField(field Field, object typed.Typed, input typed.Typed, res *Result) any {
 	fieldName := field.Name
 
 	value, exists := object[fieldName]
@@ -42,14 +44,22 @@ func (v *AnyValidator) validateObjectField(object typed.Typed, input typed.Typed
 			res.AddInvalidField(field, v.errReq)
 		} else if dflt := v.dflt; dflt != 0 {
 			object[fieldName] = dflt
+			return dflt
 		}
-		return
+		return value
 	}
-	object[fieldName] = v.validateValue(field, value, object, input, res)
+	validated := v.validateValue(field, value, object, input, res)
+	object[fieldName] = validated
+	return validated
 }
 
-func (v *AnyValidator) validateArrayValue(value any, res *Result) {
-	v.validateValue(v.field, value, nil, nil, res)
+// this is called internally when we're validating an object and the nested fields
+func (v *AnyValidator) validateObjectField(object typed.Typed, input typed.Typed, res *Result) {
+	v.ValidateObjectField(v.field, object, input, res)
+}
+
+func (v *AnyValidator) validateArrayValue(value any, res *Result) any {
+	return v.validateValue(v.field, value, nil, nil, res)
 }
 
 func (v *AnyValidator) validateValue(field Field, value any, object typed.Typed, input typed.Typed, res *Result) any {

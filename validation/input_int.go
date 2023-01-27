@@ -43,7 +43,7 @@ func (v *IntValidator) argsToTyped(args *fasthttp.Args, t typed.Typed) {
 // This is exposed in case some caller wants to execute the validator directly
 // This most likely happens when the object is being manually validated with the
 // use of an object validator (i.e. Object().Func(...))
-func (v *IntValidator) ValidateObjectField(field Field, object typed.Typed, input typed.Typed, res *Result) {
+func (v *IntValidator) ValidateObjectField(field Field, object typed.Typed, input typed.Typed, res *Result) int {
 	fieldName := field.Name
 	value, exists := object.IntIf(fieldName)
 
@@ -53,14 +53,17 @@ func (v *IntValidator) ValidateObjectField(field Field, object typed.Typed, inpu
 				res.AddInvalidField(field, v.errReq)
 			} else if dflt := v.dflt; dflt != 0 {
 				object[fieldName] = dflt
+				return dflt
 			}
-			return
+			return value
 		}
 		res.AddInvalidField(field, v.errType)
-		return
+		return value
 	}
 
-	object[fieldName] = v.validateValue(field, value, object, input, res)
+	validated := v.validateValue(field, value, object, input, res)
+	object[fieldName] = validated
+	return validated
 }
 
 // this is called internally when we're validating an object and the nested fields
@@ -68,14 +71,14 @@ func (v *IntValidator) validateObjectField(object typed.Typed, input typed.Typed
 	v.ValidateObjectField(v.field, object, input, res)
 }
 
-func (v *IntValidator) validateArrayValue(value any, res *Result) {
+func (v *IntValidator) validateArrayValue(value any, res *Result) any {
 	field := v.field
 	n, ok := typed.NumericToInt(value)
 	if !ok {
 		res.AddInvalidField(field, v.errType)
-		return
+		return 0
 	}
-	v.validateValue(field, n, nil, nil, res)
+	return v.validateValue(field, n, nil, nil, res)
 }
 
 func (v *IntValidator) validateValue(field Field, value int, object typed.Typed, input typed.Typed, res *Result) int {

@@ -757,6 +757,21 @@ func Test_Array_Floats(t *testing.T) {
 		FieldsHaveNoErrors("users.0")
 }
 
+func Test_Array_Transformer(t *testing.T) {
+	o1 := Object().Field("ids", Array().Required().Validator(Int()).Transformer(func(values []any) any {
+		ids := make([]int, len(values))
+		for i, id := range values {
+			ids[i] = id.(int)
+		}
+		return ids
+	}))
+
+	data, res := testInput(o1, "ids", []any{1, 2, 3})
+	assert.Validation(t, res).FieldsHaveNoErrors("ids")
+	ids := data["ids"].([]int)
+	assert.Equal(t, len(ids), 3)
+}
+
 func Test_Any_Required(t *testing.T) {
 	f2 := Any().Required()
 	o := Object().
