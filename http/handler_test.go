@@ -2,6 +2,7 @@ package http
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/valyala/fasthttp"
@@ -115,7 +116,7 @@ func Test_Handler_LogsError(t *testing.T) {
 	assert.Equal(t, reqLog["res"], "95")
 	assert.Equal(t, reqLog["code"], "2001")
 	assert.Equal(t, reqLog["c"], "test2")
-	assert.Equal(t, reqLog["err"], `"Not Over 9000!"`)
+	assert.Equal(t, reqLog["err"], `"wrapped(Not Over 9000!)"`)
 	assert.Equal(t, reqLog["eid"], string(errorId))
 }
 
@@ -188,6 +189,10 @@ func (e TestEnv) Request(route string) log.Logger {
 
 func (e TestEnv) Error(ctx string) log.Logger {
 	return e.logger.Error(ctx)
+}
+
+func (e TestEnv) ServerError(err error) Response {
+	return ServerError(fmt.Errorf("wrapped(%w)", err))
 }
 
 func assertCode(t *testing.T, conn *fasthttp.RequestCtx, expected int) {

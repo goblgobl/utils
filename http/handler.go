@@ -12,6 +12,7 @@ type Env interface {
 	RequestId() string
 	Request(string) log.Logger
 	Error(string) log.Logger
+	ServerError(err error) Response
 }
 
 func Handler[T Env](routeName string, loadEnv func(ctx *fasthttp.RequestCtx) (T, Response, error), next func(ctx *fasthttp.RequestCtx, env T) (Response, error)) func(ctx *fasthttp.RequestCtx) {
@@ -24,17 +25,21 @@ func Handler[T Env](routeName string, loadEnv func(ctx *fasthttp.RequestCtx) (T,
 		header := &conn.Response.Header
 		header.SetContentTypeBytes([]byte("application/json"))
 
-		if res == nil && err == nil {
+		if err != nil {
+			res = ServerError(err)
+		}
+		if res == nil {
+			// we can only be here if loadEnv didn't return a response or an error
+			// (which means it should have returned an env)
 			defer env.Release()
 			logger = env.Request(routeName)
 			header.SetBytesK([]byte("RequestId"), env.RequestId())
 			res, err = next(conn, env)
+			if err != nil {
+				res = env.ServerError(err)
+			}
 		} else {
 			logger = log.Request(routeName)
-		}
-
-		if err != nil {
-			res = ServerError(err)
 		}
 
 		res.Write(conn, logger).
