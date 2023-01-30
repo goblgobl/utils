@@ -21,7 +21,7 @@ func Test_Get_Loader(t *testing.T) {
 			return nil, errors.New("invalid id")
 		}
 		return &TestItem{id: id}, nil
-	})
+	}, nil)
 
 	i, err := m.Get("nope")
 	assert.Nil(t, err)
@@ -44,7 +44,7 @@ func Test_Get_Loader(t *testing.T) {
 func Test_Get_Fuzz(t *testing.T) {
 	m := NewMap[*TestItem](func(id string) (*TestItem, error) {
 		return &TestItem{id: id}, nil
-	})
+	}, nil)
 
 	for i := 0; i < 200; i++ {
 		id := strconv.Itoa(i)
@@ -56,7 +56,7 @@ func Test_Get_Fuzz(t *testing.T) {
 
 func Test_Put(t *testing.T) {
 	ti1, ti2 := new(TestItem), new(TestItem)
-	m := NewMap[*TestItem](nil)
+	m := NewMap[*TestItem](nil, nil)
 
 	m.Put("i1", ti1)
 	actual, _ := m.Get("i1")
@@ -65,4 +65,19 @@ func Test_Put(t *testing.T) {
 	m.Put("i1", ti2)
 	actual, _ = m.Get("i1")
 	assert.Equal(t, actual, ti2)
+}
+
+func Test_Cleanup(t *testing.T) {
+	called := 0
+	ti1, ti2 := &TestItem{"1"}, &TestItem{"2"}
+	m := NewMap[*TestItem](nil, func(item *TestItem) {
+		called += 1
+		assert.Equal(t, item.id, "1")
+	})
+	m.Put("ia", ti1)
+	assert.Equal(t, called, 0)
+	m.Put("ia", ti2)
+	assert.Equal(t, called, 1)
+	m.Put("ib", ti1)
+	assert.Equal(t, called, 1)
 }

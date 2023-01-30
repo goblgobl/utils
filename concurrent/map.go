@@ -12,13 +12,14 @@ import (
 
 type Loader[V any] func(id string) (V, error)
 
-func NewMap[V any](loader Loader[V]) Map[V] {
+func NewMap[V any](loader Loader[V], cleaner func(v V)) Map[V] {
 	shards := make([]*shard[V], 64)
 	for i := 0; i < len(shards); i++ {
 		shards[i] = &shard[V]{
-			loader: loader,
-			lookup: make(map[string]V),
-			sf:     new(singleflight.Group),
+			loader:  loader,
+			cleaner: cleaner,
+			lookup:  make(map[string]V),
+			sf:      new(singleflight.Group),
 		}
 	}
 
@@ -48,9 +49,10 @@ func (m Map[V]) shard(id string) *shard[V] {
 
 type shard[V any] struct {
 	sync.RWMutex
-	sf     *singleflight.Group
-	lookup map[string]V
-	loader Loader[V]
+	sf      *singleflight.Group
+	lookup  map[string]V
+	loader  Loader[V]
+	cleaner func(v V)
 }
 
 func (s *shard[V]) get(id string) (V, error) {
@@ -84,6 +86,14 @@ func (s *shard[V]) get(id string) (V, error) {
 
 func (s *shard[V]) put(id string, value V) {
 	s.Lock()
-	s.lookup[id] = value
+	lookup := s.lookup
+	existing, existed := lookup[id]
+	lookup[id] = value
 	s.Unlock()
+
+	if existed {
+		if cleaner := s.cleaner; cleaner != nil {
+			cleaner(existing)
+		}
+	}
 }
