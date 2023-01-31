@@ -85,15 +85,19 @@ func (s *shard[V]) get(id string) (V, error) {
 }
 
 func (s *shard[V]) put(id string, value V) {
+	var existing V
+	var existed bool
+	cleaner := s.cleaner
+
 	s.Lock()
 	lookup := s.lookup
-	existing, existed := lookup[id]
+	if cleaner != nil {
+		existing, existed = lookup[id]
+	}
 	lookup[id] = value
 	s.Unlock()
 
 	if existed {
-		if cleaner := s.cleaner; cleaner != nil {
-			cleaner(existing)
-		}
+		cleaner(existing)
 	}
 }
