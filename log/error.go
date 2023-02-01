@@ -1,6 +1,8 @@
 package log
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // An error that's designed to be logged in a more structured manner
 type StructuredError struct {
@@ -9,8 +11,12 @@ type StructuredError struct {
 	Data map[string]any `json:"data"`
 }
 
-func (e StructuredError) Error() string {
+func (e *StructuredError) Error() string {
 	return fmt.Sprintf("code: %d - %s", e.Code, e.Err.Error())
+}
+
+func (e *StructuredError) Unwrap() error {
+	return e.Err
 }
 
 func (e *StructuredError) Int(key string, value int) *StructuredError {
