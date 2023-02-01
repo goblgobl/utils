@@ -68,6 +68,46 @@ func Test_KvLogger_StructuredError_Data(t *testing.T) {
 	})
 }
 
+func Test_KvLogger_StructuredError_Nesting_NoData(t *testing.T) {
+	out := &strings.Builder{}
+	l := KvFactory(128)(nil, INFO, true)
+	s1 := Err(311, errors.New("test_error2"))
+	s2 := Err(312, s1)
+
+	l.Warn("w").Err(s2).LogTo(out)
+	assertKvLog(t, out, false, map[string]string{
+		"code": "312",
+		"err":  `"code: 311 - test_error2"`,
+	})
+}
+
+func Test_KvLogger_StructuredError_Nesting_Data(t *testing.T) {
+	out := &strings.Builder{}
+	l := KvFactory(128)(nil, INFO, true)
+	s1 := Err(311, errors.New("test_error2")).String("id", "a").Int("x", 9)
+	s2 := Err(312, s1).String("other", "b").Int("x", 8)
+
+	l.Warn("w").Err(s2).LogTo(out)
+	assertKvLog(t, out, false, map[string]string{
+		"id":    "a",
+		"other": "b",
+		"x":     "8",
+		"code":  "312",
+		"err":   `"code: 311 - test_error2"`,
+	})
+
+	out.Reset()
+	s3 := ErrData(312, s1, map[string]any{"other": "b2", "x": 10})
+	l.Warn("w").Err(s3).LogTo(out)
+	assertKvLog(t, out, false, map[string]string{
+		"id":    "a",
+		"other": "b2",
+		"x":     "10",
+		"code":  "312",
+		"err":   `"code: 311 - test_error2"`,
+	})
+}
+
 func Test_KvLogger_Timestamp(t *testing.T) {
 	out := &strings.Builder{}
 	l := KvFactory(128)(nil, INFO, true)

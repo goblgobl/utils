@@ -36,6 +36,19 @@ func Err(code int, err error) *StructuredError {
 }
 
 func ErrData(code int, err error, data map[string]any) *StructuredError {
+	if se, ok := err.(*StructuredError); ok {
+		if nestedData := se.Data; nestedData != nil {
+			if data == nil {
+				data = nestedData
+			} else {
+				for key, value := range nestedData {
+					if _, exists := data[key]; !exists {
+						data[key] = value
+					}
+				}
+			}
+		}
+	}
 	return &StructuredError{
 		Err:  err,
 		Code: code,
