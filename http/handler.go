@@ -12,7 +12,7 @@ type Env interface {
 	RequestId() string
 	Request(string) log.Logger
 	Error(string) log.Logger
-	ServerError(err error) Response
+	ServerError(err error, conn *fasthttp.RequestCtx) Response
 }
 
 func Handler[T Env](routeName string, loadEnv func(ctx *fasthttp.RequestCtx) (T, Response, error), next func(ctx *fasthttp.RequestCtx, env T) (Response, error)) func(ctx *fasthttp.RequestCtx) {
@@ -36,7 +36,7 @@ func Handler[T Env](routeName string, loadEnv func(ctx *fasthttp.RequestCtx) (T,
 			header.SetBytesK([]byte("RequestId"), env.RequestId())
 			res, err = next(conn, env)
 			if err != nil {
-				res = env.ServerError(err)
+				res = env.ServerError(err, conn)
 			}
 		} else {
 			logger = log.Request(routeName)
