@@ -26,7 +26,7 @@ func Handler[T Env](routeName string, loadEnv func(ctx *fasthttp.RequestCtx) (T,
 		header.SetContentTypeBytes([]byte("application/json"))
 
 		if err != nil {
-			res = ServerError(err)
+			res = ServerError(err, false)
 		}
 		if res == nil {
 			// we can only be here if loadEnv didn't return a response or an error
@@ -61,7 +61,7 @@ func NoEnvHandler(routeName string, next func(ctx *fasthttp.RequestCtx) (Respons
 		if err == nil {
 			logger = log.Request(routeName)
 		} else {
-			res = ServerError(err)
+			res = ServerError(err, false)
 			logger = log.Error("handler").String("route", routeName)
 		}
 

@@ -47,8 +47,13 @@ func (r ErrorIdResponse) Write(conn *fasthttp.RequestCtx, logger log.Logger) log
 		Int("res", len(r.Body))
 }
 
-func ServerError(err error) Response {
+func ServerError(err error, fullError bool) Response {
 	errorId := uuid.String()
+
+	errorMessage := "internal server error"
+	if fullError {
+		errorMessage = err.Error()
+	}
 
 	data := struct {
 		Code    int    `json:"code"`
@@ -57,7 +62,7 @@ func ServerError(err error) Response {
 	}{
 		ErrorId: errorId,
 		Code:    utils.RES_SERVER_ERROR,
-		Error:   "internal server error",
+		Error:   errorMessage,
 	}
 	body, _ := json.Marshal(data)
 	return NewErrorIdResponse(err, errorId, body, serverErrorLogData)

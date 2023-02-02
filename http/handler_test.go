@@ -191,8 +191,8 @@ func (e TestEnv) Error(ctx string) log.Logger {
 	return e.logger.Error(ctx)
 }
 
-func (e TestEnv) ServerError(err error) Response {
-	return ServerError(fmt.Errorf("wrapped(%w)", err))
+func (e TestEnv) ServerError(err error, conn *fasthttp.RequestCtx) Response {
+	return ServerError(fmt.Errorf("wrapped(%w)", err), false)
 }
 
 func assertCode(t *testing.T, conn *fasthttp.RequestCtx, expected int) {
