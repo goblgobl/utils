@@ -10,6 +10,21 @@ const (
 	reqIdEncoding = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
 )
 
+var (
+	NoopReleasable = noopReleasable{}
+)
+
+type Releasable interface {
+	Release()
+}
+
+type noopReleasable struct {
+}
+
+func (_ noopReleasable) Release() {
+
+}
+
 func EncodeRequestId(requestId uint32, instanceId uint8) string {
 	var data [4]byte
 	id := data[:]

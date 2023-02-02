@@ -2,10 +2,10 @@ package buffer
 
 import (
 	"errors"
-	"fmt"
 	"io"
 
 	"src.goblgobl.com/utils"
+	"src.goblgobl.com/utils/log"
 )
 
 /*
@@ -235,7 +235,7 @@ func (b *Buffer) ensureCapacity(l int) bool {
 
 	max := b.max
 	if required > max {
-		b.err = fmt.Errorf("buffer.ensureCapacity(%d, %d) - %w", required, max, ErrMaxSize)
+		b.err = log.ErrData(utils.ERR_BUFFER_CAPACITY_MAX, ErrMaxSize, map[string]any{"max": max, "req": required})
 		return false
 	}
 

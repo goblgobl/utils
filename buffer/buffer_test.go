@@ -103,11 +103,11 @@ func Test_Buffer_Grow_Doubling(t *testing.T) {
 func Test_Buffer_Grow_MaxSize(t *testing.T) {
 	b := New(4, 8)
 	b.Write([]byte("hello world"))
-	assert.Equal(t, b.Error().Error(), "buffer.ensureCapacity(11, 8) - buffer maximum size")
+	assert.Equal(t, b.Error().Error(), "code: 3005 - buffer maximum size")
 
 	s, err := b.String()
 	assert.Equal(t, s, "")
-	assert.Equal(t, err.Error(), "buffer.ensureCapacity(11, 8) - buffer maximum size")
+	assert.Equal(t, err.Error(), "code: 3005 - buffer maximum size")
 }
 
 // Totally valid. Min is just statically allocated. But in
@@ -124,7 +124,7 @@ func Test_Buffer_MaxSize_LessThan_Min(t *testing.T) {
 	b.Write([]byte(" 9000"))
 	s, err = b.String()
 	assert.Equal(t, s, "over")
-	assert.Equal(t, err.Error(), "buffer.ensureCapacity(9, 5) - buffer maximum size")
+	assert.Equal(t, err.Error(), "code: 3005 - buffer maximum size")
 }
 
 func Test_Buffer_Reset_Normal(t *testing.T) {
