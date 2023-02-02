@@ -45,7 +45,7 @@ func StaticError(status int, code int, error string) StaticResponse {
 	}
 
 	logData := log.NewField().
-		Int("code", code).
+		Int("_code", code).
 		Int("status", status).
 		Int("res", len(body)).
 		Finalize()

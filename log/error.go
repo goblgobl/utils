@@ -2,6 +2,7 @@ package log
 
 import (
 	"fmt"
+	"strconv"
 )
 
 // An error that's designed to be logged in a more structured manner
@@ -12,7 +13,7 @@ type StructuredError struct {
 }
 
 func (e *StructuredError) Error() string {
-	return fmt.Sprintf("code: %d - %s", e.Code, e.Err.Error())
+	return "code: " + strconv.Itoa(e.Code) + " - " + e.Err.Error()
 }
 
 func (e *StructuredError) Unwrap() error {
@@ -53,6 +54,11 @@ func ErrData(code int, err error, data map[string]any) *StructuredError {
 					}
 				}
 			}
+		}
+		if data == nil {
+			data = map[string]any{"_icode": se.Code}
+		} else {
+			data["_icode"] = se.Code
 		}
 	}
 	return &StructuredError{

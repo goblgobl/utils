@@ -26,8 +26,8 @@ func Test_Handler_EnvLoader_Error(t *testing.T) {
 	})
 
 	reqLog := log.KvParse(logged)
-	assert.Equal(t, reqLog["l"], "req")
-	assert.Equal(t, reqLog["code"], "2001")
+	assert.Equal(t, reqLog["_l"], "req")
+	assert.Equal(t, reqLog["_code"], "2001")
 
 	errorId := reqLog["eid"]
 	assert.Equal(t, len(errorId), 36)
@@ -52,8 +52,8 @@ func Test_Handler_EnvLoader_Response(t *testing.T) {
 	})
 
 	reqLog := log.KvParse(logged)
-	assert.Equal(t, reqLog["l"], "req")
-	assert.Equal(t, reqLog["code"], "60")
+	assert.Equal(t, reqLog["_l"], "req")
+	assert.Equal(t, reqLog["_code"], "60")
 
 	res := conn.Response
 	assert.Equal(t, res.StatusCode(), 61)
@@ -85,11 +85,11 @@ func Test_Handler_LogsResponse(t *testing.T) {
 	})
 
 	reqLog := log.KvParse(logged)
-	assert.Equal(t, reqLog["l"], "req")
+	assert.Equal(t, reqLog["_l"], "req")
 	assert.Equal(t, reqLog["status"], "404")
 	assert.Equal(t, reqLog["res"], "33")
-	assert.Equal(t, reqLog["code"], "9001")
-	assert.Equal(t, reqLog["c"], "test-route")
+	assert.Equal(t, reqLog["_code"], "9001")
+	assert.Equal(t, reqLog["_c"], "test-route")
 }
 
 func Test_Handler_LogsError(t *testing.T) {
@@ -111,12 +111,12 @@ func Test_Handler_LogsError(t *testing.T) {
 	assert.Equal(t, len(errorId), 36)
 
 	reqLog := log.KvParse(logged)
-	assert.Equal(t, reqLog["l"], "req")
+	assert.Equal(t, reqLog["_l"], "req")
+	assert.Equal(t, reqLog["_c"], "test2")
+	assert.Equal(t, reqLog["_err"], `"wrapped(Not Over 9000!)"`)
+	assert.Equal(t, reqLog["_code"], "2001")
 	assert.Equal(t, reqLog["status"], "500")
 	assert.Equal(t, reqLog["res"], "95")
-	assert.Equal(t, reqLog["code"], "2001")
-	assert.Equal(t, reqLog["c"], "test2")
-	assert.Equal(t, reqLog["err"], `"wrapped(Not Over 9000!)"`)
 	assert.Equal(t, reqLog["eid"], string(errorId))
 }
 
@@ -129,11 +129,11 @@ func Test_NoEnvHandler_LogsResponse(t *testing.T) {
 	})
 
 	reqLog := log.KvParse(logged)
-	assert.Equal(t, reqLog["l"], "req")
+	assert.Equal(t, reqLog["_l"], "req")
+	assert.Equal(t, reqLog["_c"], "test-route")
+	assert.Equal(t, reqLog["_code"], "9001")
 	assert.Equal(t, reqLog["status"], "404")
-	assert.Equal(t, reqLog["c"], "test-route")
 	assert.Equal(t, reqLog["res"], "33")
-	assert.Equal(t, reqLog["code"], "9001")
 }
 
 func Test_NoEnvHandler_LogsError(t *testing.T) {
@@ -151,13 +151,13 @@ func Test_NoEnvHandler_LogsError(t *testing.T) {
 	assert.Equal(t, len(errorId), 36)
 
 	reqLog := log.KvParse(logged)
-	assert.Equal(t, reqLog["l"], "error")
+	assert.Equal(t, reqLog["_l"], "error")
+	assert.Equal(t, reqLog["_c"], "handler")
+	assert.Equal(t, reqLog["_code"], "2001")
+	assert.Equal(t, reqLog["_err"], `"Not Over 9000!"`)
 	assert.Equal(t, reqLog["status"], "500")
 	assert.Equal(t, reqLog["route"], "test2")
 	assert.Equal(t, reqLog["res"], "95")
-	assert.Equal(t, reqLog["code"], "2001")
-	assert.Equal(t, reqLog["c"], "handler")
-	assert.Equal(t, reqLog["err"], `"Not Over 9000!"`)
 	assert.Equal(t, reqLog["eid"], string(errorId))
 }
 

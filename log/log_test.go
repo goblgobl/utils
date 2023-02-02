@@ -17,20 +17,20 @@ func Test_Global_Helpers(t *testing.T) {
 	assert.Nil(t, err)
 
 	Info("i").LogTo(out)
-	assertKvLog(t, out, false, map[string]string{"l": "info", "c": "i"})
+	assertKvLog(t, out, false, map[string]string{"_l": "info", "_c": "i"})
 
 	Warn("w").LogTo(out)
-	assertKvLog(t, out, false, map[string]string{"l": "warn", "c": "w"})
+	assertKvLog(t, out, false, map[string]string{"_l": "warn", "_c": "w"})
 
 	Error("e").LogTo(out)
-	assertKvLog(t, out, false, map[string]string{"l": "error", "c": "e"})
+	assertKvLog(t, out, false, map[string]string{"_l": "error", "_c": "e"})
 
 	Fatal("f").LogTo(out)
-	assertKvLog(t, out, false, map[string]string{"l": "fatal", "c": "f"})
+	assertKvLog(t, out, false, map[string]string{"_l": "fatal", "_c": "f"})
 
 	Request("r1").LogTo(out)
-	assertKvLog(t, out, false, map[string]string{"l": "req", "c": "r1"})
+	assertKvLog(t, out, false, map[string]string{"_l": "req", "_c": "r1"})
 
 	Checkout().Info("i2").LogTo(out)
-	assertKvLog(t, out, false, map[string]string{"l": "info", "c": "i2"})
+	assertKvLog(t, out, false, map[string]string{"_l": "info", "_c": "i2"})
 }

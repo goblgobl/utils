@@ -40,8 +40,8 @@ func Test_Ok_InvalidBody(t *testing.T) {
 
 	errorId := res.log["eid"]
 	assert.Equal(t, len(errorId), 36)
+	assert.Equal(t, res.log["_code"], "2002")
 	assert.Equal(t, res.log["res"], "95")
-	assert.Equal(t, res.log["code"], "2002")
 	assert.Equal(t, res.log["status"], "500")
 
 	assert.Equal(t, res.status, 500)
@@ -55,8 +55,8 @@ func Test_StaticNotFound(t *testing.T) {
 	res := read(StaticNotFound(1023))
 	assert.Equal(t, res.status, 404)
 	assert.Equal(t, res.body, `{"code":1023,"error":"not found"}`)
+	assert.Equal(t, res.log["_code"], "1023")
 	assert.Equal(t, res.log["res"], "33")
-	assert.Equal(t, res.log["code"], "1023")
 	assert.Equal(t, res.log["status"], "404")
 }
 
@@ -64,8 +64,8 @@ func Test_StaticError(t *testing.T) {
 	res := read(StaticError(511, 1002, "oops"))
 	assert.Equal(t, res.status, 511)
 	assert.Equal(t, res.body, `{"code":1002,"error":"oops"}`)
+	assert.Equal(t, res.log["_code"], "1002")
 	assert.Equal(t, res.log["res"], "28")
-	assert.Equal(t, res.log["code"], "1002")
 	assert.Equal(t, res.log["status"], "511")
 }
 
@@ -78,9 +78,9 @@ func Test_ServerError_NotFullError(t *testing.T) {
 	errorId := res.json.String("error_id")
 	assert.Equal(t, len(errorId), 36)
 
+	assert.Equal(t, res.log["_err"], "an_error1")
+	assert.Equal(t, res.log["_code"], "2001")
 	assert.Equal(t, res.log["res"], "95")
-	assert.Equal(t, res.log["err"], "an_error1")
-	assert.Equal(t, res.log["code"], "2001")
 	assert.Equal(t, res.log["status"], "500")
 	assert.Equal(t, res.log["eid"], errorId)
 }
@@ -94,9 +94,9 @@ func Test_ServerError_FullError(t *testing.T) {
 	errorId := res.json.String("error_id")
 	assert.Equal(t, len(errorId), 36)
 
+	assert.Equal(t, res.log["_err"], "an_error1")
+	assert.Equal(t, res.log["_code"], "2001")
 	assert.Equal(t, res.log["res"], "83")
-	assert.Equal(t, res.log["err"], "an_error1")
-	assert.Equal(t, res.log["code"], "2001")
 	assert.Equal(t, res.log["status"], "500")
 	assert.Equal(t, res.log["eid"], errorId)
 }
@@ -126,8 +126,8 @@ func Test_Validation(t *testing.T) {
 	assert.Equal(t, invalid[1].String("error"), "must be greater or equal to 10")
 	assert.Equal(t, invalid[1].Object("data").Int("min"), 10)
 
+	assert.Equal(t, res.log["_code"], "2004")
 	assert.Equal(t, res.log["res"], "200")
-	assert.Equal(t, res.log["code"], "2004")
 	assert.Equal(t, res.log["status"], "400")
 }
 

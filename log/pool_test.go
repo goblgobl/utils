@@ -110,33 +110,33 @@ func Test_Pool_KvLogging(t *testing.T) {
 	l1 := p.Info("c-info").String("a", "b")
 	l1.LogTo(out)
 	assertKvLog(t, out, true, map[string]string{
-		"a": "b",
-		"l": "info",
-		"c": "c-info",
+		"a":  "b",
+		"_l": "info",
+		"_c": "c-info",
 	})
 
 	l2 := p.Warn("c-warn").String("a", "b")
 	l2.LogTo(out)
 	assertKvLog(t, out, true, map[string]string{
-		"a": "b",
-		"l": "warn",
-		"c": "c-warn",
+		"a":  "b",
+		"_l": "warn",
+		"_c": "c-warn",
 	})
 
 	l3 := p.Error("c-error").String("a", "b")
 	l3.LogTo(out)
 	assertKvLog(t, out, true, map[string]string{
-		"a": "b",
-		"l": "error",
-		"c": "c-error",
+		"a":  "b",
+		"_l": "error",
+		"_c": "c-error",
 	})
 
 	l4 := p.Fatal("c-fatal").String("a", "b")
 	l4.LogTo(out)
 	assertKvLog(t, out, true, map[string]string{
-		"a": "b",
-		"l": "fatal",
-		"c": "c-fatal",
+		"a":  "b",
+		"_l": "fatal",
+		"_c": "c-fatal",
 	})
 }
 
@@ -147,9 +147,9 @@ func Test_Pool_Request(t *testing.T) {
 	l1 := p.Request("route1").String("a", "b")
 	l1.LogTo(out)
 	assertKvLog(t, out, true, map[string]string{
-		"a": "b",
-		"l": "req",
-		"c": "route1",
+		"a":  "b",
+		"_l": "req",
+		"_c": "route1",
 	})
 
 	// disable request logging

@@ -10,12 +10,12 @@ import (
 
 var (
 	serverErrorLogData = log.NewField().
-				Int("code", utils.RES_SERVER_ERROR).
+				Int("_code", utils.RES_SERVER_ERROR).
 				Int("status", 500).
 				Finalize()
 
 	serializationErrorLogData = log.NewField().
-					Int("code", utils.RES_SERIALIZATION_ERROR).
+					Int("_code", utils.RES_SERIALIZATION_ERROR).
 					Int("status", 500).
 					Finalize()
 )

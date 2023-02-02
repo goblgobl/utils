@@ -21,7 +21,7 @@ import (
 
 var (
 	validationLogData = log.NewField().
-				Int("code", utils.RES_VALIDATION).
+				Int("_code", utils.RES_VALIDATION).
 				Int("status", 400).
 				Finalize()
 

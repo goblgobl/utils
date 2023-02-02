@@ -125,10 +125,10 @@ func (l *KvLogger) Bool(key string, value bool) Logger {
 func (l *KvLogger) Err(err error) Logger {
 	se, ok := err.(*StructuredError)
 	if !ok {
-		return l.String("err", err.Error())
+		return l.String("_err", err.Error())
 	}
 
-	l.Int("code", se.Code).String("err", se.Err.Error())
+	l.Int("_code", se.Code).String("_err", se.Err.Error())
 	for key, value := range se.Data {
 		switch v := value.(type) {
 		case string:
@@ -181,7 +181,7 @@ func (l *KvLogger) Info(ctx string) Logger {
 		l.conditionalRelease()
 		return Noop{}
 	}
-	return l.start(ctx, []byte("l=info t="))
+	return l.start(ctx, []byte("_l=info _t="))
 }
 
 // Log an warn-level message.
@@ -190,7 +190,7 @@ func (l *KvLogger) Warn(ctx string) Logger {
 		l.conditionalRelease()
 		return Noop{}
 	}
-	return l.start(ctx, []byte("l=warn t="))
+	return l.start(ctx, []byte("_l=warn _t="))
 }
 
 // Log an error-level message.
@@ -199,7 +199,7 @@ func (l *KvLogger) Error(ctx string) Logger {
 		l.conditionalRelease()
 		return Noop{}
 	}
-	return l.start(ctx, []byte("l=error t="))
+	return l.start(ctx, []byte("_l=error _t="))
 }
 
 // Log an fatal-level message.
@@ -208,7 +208,7 @@ func (l *KvLogger) Fatal(ctx string) Logger {
 		l.conditionalRelease()
 		return Noop{}
 	}
-	return l.start(ctx, []byte("l=fatal t="))
+	return l.start(ctx, []byte("_l=fatal _t="))
 }
 
 // Log a request message.
@@ -217,7 +217,7 @@ func (l *KvLogger) Request(route string) Logger {
 		l.conditionalRelease()
 		return Noop{}
 	}
-	return l.start(route, []byte("l=req t="))
+	return l.start(route, []byte("_l=req _t="))
 }
 
 func (l *KvLogger) Field(field Field) Logger {
@@ -261,8 +261,8 @@ func (l *KvLogger) start(ctx string, meta []byte) Logger {
 	pos += uint64(len(t))
 
 	// we always expect the ctx to be safe and to outlive this log
-	copy(buffer[pos:], []byte(" c="))
-	pos += 3
+	copy(buffer[pos:], []byte(" _c="))
+	pos += 4
 
 	copy(buffer[pos:], ctx)
 	pos += uint64(len(ctx))
