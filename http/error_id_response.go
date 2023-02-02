@@ -21,10 +21,19 @@ var (
 )
 
 type ErrorIdResponse struct {
-	err     error
+	Err     error
 	ErrorId string
 	Body    []byte
 	LogData log.Field
+}
+
+func NewErrorIdResponse(err error, errorId string, body []byte, logData log.Field) ErrorIdResponse {
+	return ErrorIdResponse{
+		Err:     err,
+		ErrorId: errorId,
+		Body:    body,
+		LogData: logData,
+	}
 }
 
 func (r ErrorIdResponse) Write(conn *fasthttp.RequestCtx, logger log.Logger) log.Logger {
@@ -32,7 +41,7 @@ func (r ErrorIdResponse) Write(conn *fasthttp.RequestCtx, logger log.Logger) log
 	conn.Response.Header.SetBytesK([]byte("Error-Id"), r.ErrorId)
 	conn.SetBody(r.Body)
 	return logger.
-		Err(r.err).
+		Err(r.Err).
 		Field(r.LogData).
 		String("eid", r.ErrorId).
 		Int("res", len(r.Body))
@@ -51,13 +60,7 @@ func ServerError(err error) Response {
 		Error:   "internal server error",
 	}
 	body, _ := json.Marshal(data)
-
-	return ErrorIdResponse{
-		err:     err,
-		Body:    body,
-		ErrorId: errorId,
-		LogData: serverErrorLogData,
-	}
+	return NewErrorIdResponse(err, errorId, body, serverErrorLogData)
 }
 
 func SerializationError(err error) Response {
@@ -74,10 +77,5 @@ func SerializationError(err error) Response {
 	}
 	body, _ := json.Marshal(data)
 
-	return ErrorIdResponse{
-		err:     err,
-		Body:    body,
-		ErrorId: errorId,
-		LogData: serializationErrorLogData,
-	}
+	return NewErrorIdResponse(err, errorId, body, serializationErrorLogData)
 }
