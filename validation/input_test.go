@@ -91,6 +91,18 @@ func Test_String_Length(t *testing.T) {
 		FieldsHaveNoErrors("f3", "f3_clone")
 }
 
+func Test_String_TrimSpace(t *testing.T) {
+	f1 := String().TrimSpace().Length(2, 10)
+	o := Object().Field("f1", f1)
+
+	_, res := testInput(o, "f1", " 1 ")
+	assert.Validation(t, res).Field("f1", InvalidStringLength(2, 10))
+
+	data, res := testInput(o, "f1", " 12 ")
+	assert.Validation(t, res).FieldsHaveNoErrors("f1")
+	assert.Equal(t, data["f1"].(string), "12")
+}
+
 func Test_String_Choice(t *testing.T) {
 	f1 := String().Choice("c1", "c2")
 	o1 := Object().

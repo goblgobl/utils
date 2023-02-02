@@ -2,6 +2,7 @@ package validation
 
 import (
 	"regexp"
+	"strings"
 
 	"github.com/valyala/fasthttp"
 	"src.goblgobl.com/utils/typed"
@@ -149,6 +150,11 @@ func (v *StringValidator) Length(min int, max int) *StringValidator {
 	return v
 }
 
+func (v *StringValidator) TrimSpace() *StringValidator {
+	v.rules = append(v.rules, StringTrimSpace{})
+	return v
+}
+
 func (v *StringValidator) Pattern(pattern string, errorMessage ...string) *StringValidator {
 	v.rules = append(v.rules, StringPattern{
 		pattern: regexp.MustCompile(pattern),
@@ -246,5 +252,16 @@ func (r StringFunc) Validate(field Field, value string, object typed.Typed, inpu
 }
 
 func (r StringFunc) clone() StringRule {
+	return r
+}
+
+type StringTrimSpace struct {
+}
+
+func (r StringTrimSpace) Validate(field Field, value string, object typed.Typed, input typed.Typed, res *Result) string {
+	return strings.TrimSpace(value)
+}
+
+func (r StringTrimSpace) clone() StringRule {
 	return r
 }
