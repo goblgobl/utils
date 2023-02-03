@@ -27,7 +27,6 @@ INFO and our configured level will be > INFO.
 import (
 	"io"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -300,7 +299,7 @@ func writeKeyValue(key string, value string, safe bool, pos uint64, buffer []byt
 	buffer[pos] = '='
 	pos += 1
 
-	if safe || !strings.ContainsAny(value, " =\"\n") {
+	if safe || !requiresEscape(value) {
 		copy(buffer[pos:], value)
 		return pos + uint64(len(value))
 	}
@@ -334,4 +333,14 @@ func writeKeyValue(key string, value string, safe bool, pos uint64, buffer []byt
 
 	buffer[pos] = '"'
 	return pos + 1
+}
+
+func requiresEscape(input string) bool {
+	for i := 0; i < len(input); i++ {
+		c := input[i]
+		if c == '=' || c == '"' || c == '\n' || c == ' ' {
+			return true
+		}
+	}
+	return false
 }
