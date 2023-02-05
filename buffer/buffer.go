@@ -152,6 +152,14 @@ func (b Buffer) SqliteBytes() ([]byte, error) {
 	return b.data[:b.pos], b.err
 }
 
+// ensure that we have enough space for padSize
+func (b *Buffer) Pad(padSize int) error {
+	if !b.ensureCapacity(padSize) {
+		return b.err
+	}
+	return nil
+}
+
 // Write and ensure enough capacity for len(data) + padSize
 // Meant to be used with WriteByteUnsafe.
 func (b *Buffer) WritePad(data []byte, padSize int) (int, error) {

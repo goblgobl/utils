@@ -223,6 +223,13 @@ func Test_Buffer_Reader(t *testing.T) {
 	assert.Equal(t, out.Len(), 0)
 }
 
+func Test_Buffer_Pad(t *testing.T) {
+	b := New(10, 100)
+	assert.Nil(t, b.Pad(20))
+	assert.Equal(t, b.pos, 0)
+	assert.Equal(t, len(b.data), 20)
+}
+
 func testMustString(b *Buffer) string {
 	s, err := b.String()
 	if err != nil {
