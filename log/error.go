@@ -32,6 +32,12 @@ func (e *StructuredError) String(key string, value string) *StructuredError {
 	return e
 }
 
+func (e *StructuredError) Binary(key string, value []byte) *StructuredError {
+	e.ensureMap()
+	e.Data[key] = value
+	return e
+}
+
 func (e *StructuredError) ensureMap() {
 	if e.Data == nil {
 		e.Data = make(map[string]any, 1)

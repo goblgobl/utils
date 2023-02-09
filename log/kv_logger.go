@@ -152,6 +152,8 @@ func (l *KvLogger) Err(err error) Logger {
 			l.String(key, v)
 		case int:
 			l.Int(key, v)
+		case []byte:
+			l.Binary(key, v)
 		}
 	}
 	return l
