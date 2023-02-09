@@ -19,6 +19,24 @@ func Test_Int(t *testing.T) {
 	assert.Equal(t, v.Value, 9001)
 }
 
+func Test_Bool(t *testing.T) {
+	v := Bool(true)
+	assert.True(t, v.Exists)
+	assert.Equal(t, v.Value, true)
+}
+
+func Test_String(t *testing.T) {
+	v := String("teg atreides")
+	assert.True(t, v.Exists)
+	assert.Equal(t, v.Value, "teg atreides")
+}
+
+func Test_Float(t *testing.T) {
+	v := Float(9000.2)
+	assert.True(t, v.Exists)
+	assert.Equal(t, v.Value, 9000.2)
+}
+
 func Test_New(t *testing.T) {
 	v := New("over")
 	assert.True(t, v.Exists)

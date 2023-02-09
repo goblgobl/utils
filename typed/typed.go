@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"src.goblgobl.com/utils/json"
+	"src.goblgobl.com/utils/optional"
 )
 
 var (
@@ -77,6 +78,13 @@ func (t Typed) Bool(key string) bool {
 	return t.BoolOr(key, false)
 }
 
+func (t Typed) OptionalBool(key string) optional.Value[bool] {
+	if value, exists := t.BoolIf(key); exists {
+		return optional.Bool(value)
+	}
+	return optional.NullBool
+}
+
 // Returns a boolean at the key, or the specified
 // value if it doesn't exist or isn't a bool
 func (t Typed) BoolOr(key string, d bool) bool {
@@ -127,6 +135,13 @@ func (t Typed) Int(key string) int {
 	return t.IntOr(key, 0)
 }
 
+func (t Typed) OptionalInt(key string) optional.Value[int] {
+	if value, exists := t.IntIf(key); exists {
+		return optional.Int(value)
+	}
+	return optional.NullInt
+}
+
 // Returns a int at the key, or the specified
 // value if it doesn't exist or isn't a int
 func (t Typed) IntOr(key string, d int) int {
@@ -157,6 +172,13 @@ func (t Typed) IntIf(key string) (int, bool) {
 
 func (t Typed) Float(key string) float64 {
 	return t.FloatOr(key, 0)
+}
+
+func (t Typed) OptionalFloat(key string) optional.Value[float64] {
+	if value, exists := t.FloatIf(key); exists {
+		return optional.Float(value)
+	}
+	return optional.NullFloat
 }
 
 // Returns a float at the key, or the specified
@@ -198,6 +220,13 @@ func (t Typed) FloatIf(key string) (float64, bool) {
 
 func (t Typed) String(key string) string {
 	return t.StringOr(key, "")
+}
+
+func (t Typed) OptionalString(key string) optional.Value[string] {
+	if value, exists := t.StringIf(key); exists {
+		return optional.String(value)
+	}
+	return optional.NullString
 }
 
 // Returns a string at the key, or the specified

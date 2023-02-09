@@ -8,7 +8,10 @@ import (
 var (
 	NullInt    = Null[int]()
 	NullString = Null[string]()
-	jsonNull   = []byte("null")
+	NullBool   = Null[bool]()
+	NullFloat  = Null[float64]()
+
+	jsonNull = []byte("null")
 )
 
 type Value[T any] struct {
@@ -43,8 +46,16 @@ func Null[T any]() Value[T] {
 	return Value[T]{}
 }
 
+func Bool(value bool) Value[bool] {
+	return New[bool](value)
+}
+
 func Int(value int) Value[int] {
 	return New[int](value)
+}
+
+func Float(value float64) Value[float64] {
+	return New[float64](value)
 }
 
 func String(value string) Value[string] {

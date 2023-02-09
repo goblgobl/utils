@@ -72,6 +72,12 @@ func Test_Bool(t *testing.T) {
 	assert.False(t, value)
 	assert.False(t, exists)
 
+	o := typed.OptionalBool("nope")
+	assert.Equal(t, o.Exists, false)
+	o = typed.OptionalBool("log")
+	assert.Equal(t, o.Exists, true)
+	assert.Equal(t, o.Value, true)
+
 	defer mustTest(t, "expected boolean value for fail")
 	typed.BoolMust("fail")
 	t.FailNow()
@@ -110,8 +116,13 @@ func Test_Int(t *testing.T) {
 	assert.Equal(t, typed.Int("i64"), 3)
 	assert.Equal(t, typed.Int("f64"), 4)
 
-	assert.Equal(t, typed.IntMust("port"), 84)
+	o := typed.OptionalInt("nope")
+	assert.Equal(t, o.Exists, false)
+	o = typed.OptionalInt("port")
+	assert.Equal(t, o.Exists, true)
+	assert.Equal(t, o.Value, 84)
 
+	assert.Equal(t, typed.IntMust("port"), 84)
 	defer mustTest(t, "expected int value for fail")
 	typed.IntMust("fail")
 	t.FailNow()
@@ -142,8 +153,13 @@ func Test_Float(t *testing.T) {
 	assert.Equal(t, value, 0.0)
 	assert.False(t, exists)
 
-	assert.Equal(t, typed.FloatMust("pi"), 3.14)
+	o := typed.OptionalFloat("nope")
+	assert.Equal(t, o.Exists, false)
+	o = typed.OptionalFloat("pi")
+	assert.Equal(t, o.Exists, true)
+	assert.Equal(t, o.Value, 3.14)
 
+	assert.Equal(t, typed.FloatMust("pi"), 3.14)
 	defer mustTest(t, "expected float value for fail")
 	typed.FloatMust("fail")
 	t.FailNow()
@@ -167,8 +183,13 @@ func Test_String(t *testing.T) {
 	assert.Equal(t, value, "")
 	assert.False(t, exists)
 
-	assert.Equal(t, typed.StringMust("host"), "localhost")
+	o := typed.OptionalString("nope")
+	assert.Equal(t, o.Exists, false)
+	o = typed.OptionalString("host")
+	assert.Equal(t, o.Exists, true)
+	assert.Equal(t, o.Value, "localhost")
 
+	assert.Equal(t, typed.StringMust("host"), "localhost")
 	defer mustTest(t, "expected string value for fail")
 	typed.StringMust("fail")
 	t.FailNow()
