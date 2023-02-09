@@ -25,10 +25,13 @@ INFO and our configured level will be > INFO.
 */
 
 import (
+	"encoding/base64"
 	"io"
 	"strconv"
 	"time"
 )
+
+var binaryEncoder = base64.RawURLEncoding
 
 type KvLogger struct {
 	// the position in buffer to write to next
@@ -95,7 +98,16 @@ func (l *KvLogger) MultiUse() Logger {
 
 // Add a field (key=value) where value is a string
 func (l *KvLogger) String(key string, value string) Logger {
-	l.writeKeyValue(key, value, false)
+	l.writeKeyValue(key, value)
+	return l
+}
+
+func (l *KvLogger) Binary(key string, value []byte) Logger {
+	len := binaryEncoder.EncodedLen(len(value))
+	if pos, ok := l.writeKeyFor(key, len); ok {
+		binaryEncoder.Encode(l.buffer[pos:], value)
+		l.pos += uint64(len)
+	}
 	return l
 }
 
@@ -106,16 +118,22 @@ func (l *KvLogger) Int(key string, value int) Logger {
 
 // Add a field (key=value) where value is an int
 func (l *KvLogger) Int64(key string, value int64) Logger {
-	l.writeKeyValue(key, strconv.FormatInt(value, 10), true)
+	s := strconv.FormatInt(value, 10)
+	if pos, ok := l.writeKeyFor(key, len(s)); ok {
+		l.pos += uint64(copy(l.buffer[pos:], s))
+	}
 	return l
 }
 
 // Add a field (key=value) where value is a boolean
 func (l *KvLogger) Bool(key string, value bool) Logger {
-	if value {
-		l.writeKeyValue(key, "Y", true)
-	} else {
-		l.writeKeyValue(key, "N", true)
+	if pos, ok := l.writeKeyFor(key, 1); ok {
+		if value {
+			l.buffer[pos] = 'Y'
+		} else {
+			l.buffer[pos] = 'N'
+		}
+		l.pos += 1
 	}
 	return l
 }
@@ -270,42 +288,32 @@ func (l *KvLogger) start(ctx string, meta []byte) Logger {
 	return l
 }
 
-// When safe, we're being told that value 100% does not need
-// to be escaped (e.g. we know the value is an int), so we don't need to check/encode it.
-func (l *KvLogger) writeKeyValue(key string, value string, safe bool) {
-	l.pos = writeKeyValue(key, value, safe, l.pos, l.buffer)
+func (l *KvLogger) writeKeyValue(key string, value string) {
+	l.pos = writeKeyValue(key, value, l.pos, l.buffer)
+}
+
+func (l *KvLogger) writeKeyFor(key string, valueLen int) (uint64, bool) {
+	pos, ok := writeKeyForValue(key, valueLen, l.pos, l.buffer)
+	l.pos = pos
+	return pos, ok
 }
 
 // We expect key to always be safe to write as-is.
 // We only encode newline and quotes. If either is present, the value is quote encoded.
-func writeKeyValue(key string, value string, safe bool, pos uint64, buffer []byte) uint64 {
-	bl := uint64(len(buffer))
-
-	// Need at least enough room for:
-	// space sperator + equal separator + trailing newline
-	// + our key + our value
-	if bl-pos < uint64(len(key)+len(value))+3 {
+func writeKeyValue(key string, value string, pos uint64, buffer []byte) uint64 {
+	pos, haveSpace := writeKeyForValue(key, len(value), pos, buffer)
+	if !haveSpace {
 		return pos
 	}
 
-	if pos > 0 {
-		buffer[pos] = ' '
-		pos += 1
-	}
-
-	copy(buffer[pos:], key)
-	pos += uint64(len(key))
-
-	buffer[pos] = '='
-	pos += 1
-
-	if safe || !requiresEscape(value) {
+	if !requiresEscape(value) {
 		copy(buffer[pos:], value)
 		return pos + uint64(len(value))
 	}
 
 	buffer[pos] = '"'
 	pos += 1
+	bl := uint64(len(buffer))
 
 	// -2 because we need enough space for our quote and final newline
 	var i int
@@ -333,6 +341,28 @@ func writeKeyValue(key string, value string, safe bool, pos uint64, buffer []byt
 
 	buffer[pos] = '"'
 	return pos + 1
+}
+
+// Writes "$key=" and returns the position where the value can be written.
+func writeKeyForValue(key string, valueLen int, pos uint64, buffer []byte) (uint64, bool) {
+	bl := uint64(len(buffer))
+	// Need at least enough room for:
+	// space sperator + equal separator + trailing newline
+	// + our key + our value
+	if bl-pos < uint64(len(key)+valueLen)+3 {
+		return pos, false
+	}
+
+	if pos > 0 {
+		buffer[pos] = ' '
+		pos += 1
+	}
+
+	copy(buffer[pos:], key)
+	pos += uint64(len(key))
+
+	buffer[pos] = '='
+	return pos + 1, true
 }
 
 func requiresEscape(input string) bool {

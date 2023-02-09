@@ -48,9 +48,9 @@ func (f *Field) Finalize() Field {
 	for key, value := range f.fields {
 		switch v := value.(type) {
 		case int:
-			pos = writeKeyValue(key, strconv.FormatInt(int64(v), 10), true, pos, buffer)
+			pos = writeKeyValue(key, strconv.FormatInt(int64(v), 10), pos, buffer)
 		case string:
-			pos = writeKeyValue(key, v, false, pos, buffer)
+			pos = writeKeyValue(key, v, pos, buffer)
 		default:
 			panic(fmt.Sprintf("unsupport field value type: %T (%v)", value, value))
 		}

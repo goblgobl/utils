@@ -93,8 +93,11 @@ type Logger interface {
 	// Add an int64 value to the current entry
 	Int64(key string, value int64) Logger
 
-	// Add an string value to the current entry
+	// Add a string value to the current entry
 	String(key string, value string) Logger
+
+	// Add a binary value to the current entry
+	Binary(key string, value []byte) Logger
 
 	// Add a boolean value to the current entry
 	Bool(key string, value bool) Logger

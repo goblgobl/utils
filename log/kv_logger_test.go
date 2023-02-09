@@ -1,6 +1,7 @@
 package log
 
 import (
+	"encoding/base64"
 	"errors"
 	"strconv"
 	"strings"
@@ -22,6 +23,17 @@ func Test_KvLogger_Int(t *testing.T) {
 
 	l.Warn("i").Int("ms", -99).LogTo(out)
 	assertKvLog(t, out, false, map[string]string{"ms": "-99"})
+}
+
+func Test_KvLogger_Binary(t *testing.T) {
+	out := &strings.Builder{}
+	l := KvFactory(128)(nil, INFO, true)
+
+	l.Info("i").Binary("ms", []byte{1, 2, 3}).LogTo(out)
+	assertKvLog(t, out, false, map[string]string{"ms": "AQID"})
+	// a bit backwards...
+	reverse, _ := base64.RawURLEncoding.DecodeString("AQID")
+	assert.Bytes(t, []byte{1, 2, 3}, reverse)
 }
 
 func Test_KvLogger_Bool(t *testing.T) {

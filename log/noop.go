@@ -19,6 +19,7 @@ func (n Noop) Err(err error) Logger                   { return n }
 func (n Noop) Int(key string, value int) Logger       { return n }
 func (n Noop) Int64(key string, value int64) Logger   { return n }
 func (n Noop) String(key string, value string) Logger { return n }
+func (n Noop) Binary(key string, value []byte) Logger { return n }
 func (n Noop) Bool(key string, value bool) Logger     { return n }
 func (n Noop) Field(field Field) Logger               { return n }
 func (n Noop) Fixed()                                 { return }
