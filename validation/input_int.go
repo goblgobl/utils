@@ -71,7 +71,7 @@ func (v *IntValidator) validateObjectField(object typed.Typed, input typed.Typed
 	v.ValidateObjectField(v.field, object, input, res)
 }
 
-func (v *IntValidator) validateArrayValue(value any, res *Result) any {
+func (v *IntValidator) validateArrayValue(value any, input typed.Typed, res *Result) any {
 	field := v.field
 	n, ok := typed.NumericToInt(value)
 	if !ok {

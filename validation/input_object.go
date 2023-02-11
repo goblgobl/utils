@@ -95,15 +95,14 @@ func (v *ObjectValidator) validateObjectField(object typed.Typed, input typed.Ty
 	v.ValidateObjectField(v.field, object, input, res)
 }
 
-func (v *ObjectValidator) validateArrayValue(value any, res *Result) any {
+func (v *ObjectValidator) validateArrayValue(value any, input typed.Typed, res *Result) any {
 	field := v.field
 	t, ok := value.(map[string]any)
 	if !ok {
 		res.AddInvalidField(field, v.errType)
 		return nil
 	}
-	input := typed.Typed(t)
-	return v.validateValue(field, input, input, res)
+	return v.validateValue(field, typed.Typed(t), input, res)
 }
 
 func (v *ObjectValidator) validateValue(field Field, value typed.Typed, input typed.Typed, res *Result) any {

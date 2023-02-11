@@ -72,7 +72,7 @@ func (v *BoolValidator) validateObjectField(object typed.Typed, input typed.Type
 	v.ValidateObjectField(v.field, object, input, res)
 }
 
-func (v *BoolValidator) validateArrayValue(value any, res *Result) any {
+func (v *BoolValidator) validateArrayValue(value any, input typed.Typed, res *Result) any {
 	field := v.field
 	bl, ok := value.(bool)
 	if !ok {

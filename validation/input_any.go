@@ -58,8 +58,8 @@ func (v *AnyValidator) validateObjectField(object typed.Typed, input typed.Typed
 	v.ValidateObjectField(v.field, object, input, res)
 }
 
-func (v *AnyValidator) validateArrayValue(value any, res *Result) any {
-	return v.validateValue(v.field, value, nil, nil, res)
+func (v *AnyValidator) validateArrayValue(value any, input typed.Typed, res *Result) any {
+	return v.validateValue(v.field, value, input, nil, res)
 }
 
 func (v *AnyValidator) validateValue(field Field, value any, object typed.Typed, input typed.Typed, res *Result) any {

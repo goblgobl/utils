@@ -63,7 +63,7 @@ func (v *ArrayValidator) validateObjectField(object typed.Typed, input typed.Typ
 	res.BeginArray()
 	for i, value := range values {
 		res.ArrayIndex(i)
-		values[i] = validator.validateArrayValue(value, res)
+		values[i] = validator.validateArrayValue(value, input, res)
 	}
 	res.EndArray()
 
@@ -72,7 +72,7 @@ func (v *ArrayValidator) validateObjectField(object typed.Typed, input typed.Typ
 	}
 }
 
-func (v *ArrayValidator) validateArrayValue(value any, res *Result) any {
+func (v *ArrayValidator) validateArrayValue(value any, input typed.Typed, res *Result) any {
 	panic("nested array validation isn't implemented yet")
 }
 

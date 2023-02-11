@@ -72,7 +72,7 @@ func (v *StringValidator) validateObjectField(object typed.Typed, input typed.Ty
 	v.ValidateObjectField(v.field, object, input, res)
 }
 
-func (v *StringValidator) validateArrayValue(value any, res *Result) any {
+func (v *StringValidator) validateArrayValue(value any, input typed.Typed, res *Result) any {
 	field := v.field
 	str, ok := value.(string)
 	if !ok {

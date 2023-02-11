@@ -71,7 +71,7 @@ func (v *FloatValidator) validateObjectField(object typed.Typed, input typed.Typ
 	v.ValidateObjectField(v.field, object, input, res)
 }
 
-func (v *FloatValidator) validateArrayValue(value any, res *Result) any {
+func (v *FloatValidator) validateArrayValue(value any, input typed.Typed, res *Result) any {
 	field := v.field
 	flt, ok := value.(float64)
 	if !ok {

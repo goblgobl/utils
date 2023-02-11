@@ -56,7 +56,7 @@ func (v *UUIDValidator) validateObjectField(object typed.Typed, input typed.Type
 	v.ValidateObjectField(v.field, object, input, res)
 }
 
-func (v *UUIDValidator) validateArrayValue(value any, res *Result) any {
+func (v *UUIDValidator) validateArrayValue(value any, input typed.Typed, res *Result) any {
 	field := v.field
 	str, ok := value.(string)
 	if !ok {
