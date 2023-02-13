@@ -47,7 +47,7 @@ func (p *Pool) CheckoutMax(maxSize uint32) *Buffer {
 }
 
 func (p *Pool) Depleted() uint64 {
-	return atomic.SwapUint64(&p.depleted, 0)
+	return atomic.LoadUint64(&p.depleted)
 }
 
 /*
