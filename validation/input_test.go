@@ -28,6 +28,16 @@ func Test_String_Required(t *testing.T) {
 		FieldsHaveNoErrors("code", "name", "code_clone", "name_clone", "code_not_required")
 }
 
+func Test_String_Nullable(t *testing.T) {
+	o := Object().Field("a", String()).Field("b", String().Nullable())
+
+	_, res := testInput(o)
+	assert.Validation(t, res).FieldsHaveNoErrors("a", "b")
+
+	_, res = testInput(o, "a", nil, "b", nil)
+	assert.Validation(t, res).Field("a", InvalidStringType()).FieldsHaveNoErrors("b")
+}
+
 func Test_String_Default(t *testing.T) {
 	f1 := String().Default("leto")
 	f2 := String().Required().Default("leto")
@@ -632,6 +642,16 @@ func Test_Object_Func(t *testing.T) {
 
 	_, res := testInput(o1, "user", map[string]any{"name": "leto"})
 	assert.Validation(t, res).Field("user.name", InvalidStringPattern())
+}
+
+func Test_Object_Nullable(t *testing.T) {
+	o1 := Object().Field("user", Object())
+
+	_, res := testInput(o1, "user", nil)
+	assert.Validation(t, res).FieldsHaveNoErrors("user")
+
+	_, res = testInput(o1, "user", 32)
+	assert.Validation(t, res).Field("user", InvalidObjectType())
 }
 
 func Test_Array_Objects(t *testing.T) {

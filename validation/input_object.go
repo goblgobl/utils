@@ -74,7 +74,7 @@ func (v *ObjectValidator) ValidateObjectField(field Field, object typed.Typed, i
 
 	value, exists := object.ObjectIf(fieldName)
 	if !exists {
-		if _, exists := object[fieldName]; exists {
+		if value, exists := object[fieldName]; exists && value != nil {
 			res.AddInvalidField(field, v.errType)
 			return
 		}

@@ -11,7 +11,7 @@ const (
 )
 
 type Value[T any] struct {
-	Action      byte
+	Action      KdrAction
 	Replacement T
 }
 

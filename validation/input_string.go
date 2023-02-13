@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/valyala/fasthttp"
+	"src.goblgobl.com/utils/optional"
 	"src.goblgobl.com/utils/typed"
 )
 
@@ -33,6 +34,7 @@ type StringValidator struct {
 	transformers []StringTransformer
 	errReq       Invalid
 	errType      Invalid
+	nullable     bool
 }
 
 func (v *StringValidator) argsToTyped(args *fasthttp.Args, t typed.Typed) {
@@ -50,10 +52,14 @@ func (v *StringValidator) ValidateObjectField(field Field, object typed.Typed, i
 
 	value, exists := object.StringIf(fieldName)
 	if !exists {
-		if _, exists = object[fieldName]; !exists && v.required {
+		if value, exists := object[fieldName]; !exists && v.required {
 			res.AddInvalidField(field, v.errReq)
 		} else if exists {
-			res.AddInvalidField(field, v.errType)
+			if v.nullable && value == nil {
+				return optional.NullString
+			} else {
+				res.AddInvalidField(field, v.errType)
+			}
 		}
 		if dflt := v.dflt; dflt != "" {
 			object[fieldName] = dflt
@@ -114,6 +120,7 @@ func (v *StringValidator) addField(fieldName string) InputValidator {
 		rules:        rules,
 		errReq:       v.errReq,
 		errType:      v.errType,
+		nullable:     v.nullable,
 	}
 }
 
@@ -125,6 +132,12 @@ func (v *StringValidator) Required() *StringValidator {
 // used when we clone a field that was required, and we want the clone to not be required
 func (v *StringValidator) NotRequired() *StringValidator {
 	v.required = false
+	return v
+}
+
+// used when we clone a field that was required, and we want the clone to not be required
+func (v *StringValidator) Nullable() *StringValidator {
+	v.nullable = true
 	return v
 }
 
