@@ -9,6 +9,7 @@ type Pool struct {
 	minSize  uint32
 	maxSize  uint32
 	depleted uint64
+	expanded uint64
 	list     chan *Buffer
 }
 
@@ -46,8 +47,15 @@ func (p *Pool) CheckoutMax(maxSize uint32) *Buffer {
 	}
 }
 
+// how often the pool was empty and we had to create a buffer on the fly
 func (p *Pool) Depleted() uint64 {
 	return atomic.LoadUint64(&p.depleted)
+}
+
+// how often the buffer had to be expanded beyond it's min size
+// (this will always be 0 if min == max)
+func (p *Pool) Expanded() uint64 {
+	return atomic.LoadUint64(&p.expanded)
 }
 
 /*

@@ -3,6 +3,7 @@ package buffer
 import (
 	"errors"
 	"io"
+	"sync/atomic"
 
 	"src.goblgobl.com/utils"
 	"src.goblgobl.com/utils/log"
@@ -10,7 +11,7 @@ import (
 
 /*
 A wrapper around a []byte with helper methods for writing.
-The buffer is also optionally pool-aware and satisfies io.Reader
+The buffer is also optionally pool-aware and satisfies the io.Reader
 and io.Closer interfaces.
 
 While it's general-purpose, a goal is to interact with
@@ -18,16 +19,11 @@ fasthttp's Response.SetBodyStream to optimize how data is
 written to a response.
 
 The buffer has a minimum and maximum size. The minimum buffer
-size is allocated upfront. If we need more space that minimum
+size is allocated upfront. If we need more space than minimum
 but less than maximum, we'll dynamically allocated more memory.
 However, when the buffer is reset/released back into the pool,
 the dynamically allocated "large" buffer is discard and the
 pre-allocated minimal buffer is restored.
-
-It doesn't really matter to the implementation, but the maximum
-size is something we expect to change on each usage, as many max
-sizes are project-specific and, most likely, pools of buffers
-are going to be cross-project.
 */
 
 var (
@@ -73,6 +69,7 @@ func New(min uint32, max uint32) *Buffer {
 }
 
 // create a buffer that contains the specified data
+// (mostly useful for tests)
 func Containing(data []byte, max int) *Buffer {
 	return &Buffer{
 		data:   data,
@@ -258,6 +255,11 @@ func (b *Buffer) ensureCapacity(l int) bool {
 		newLen = required
 	} else if newLen > max {
 		newLen = max
+	}
+
+	// track how often we expand beyond our static buffer
+	if pool := b.pool; pool != nil && &data[0] == &b.static[0] {
+		atomic.AddUint64(&pool.expanded, 1)
 	}
 
 	newData := make([]byte, newLen)

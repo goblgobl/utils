@@ -41,3 +41,23 @@ func Test_Pool_FromConfig(t *testing.T) {
 	assert.Equal(t, s, "")
 	assert.Equal(t, p.Len(), 3)
 }
+
+func Test_Pool_Depleted(t *testing.T) {
+	p := NewPoolFromConfig(Config{Count: 2, Min: 5, Max: 30})
+
+	b1 := p.Checkout()
+	assert.Equal(t, p.Depleted(), 0)
+
+	p.Checkout()
+	assert.Equal(t, p.Depleted(), 0)
+
+	for i := uint64(0); i < 10; i++ {
+		p.Checkout()
+		assert.Equal(t, p.Depleted(), i+1)
+	}
+
+	b1.Release()
+	max := p.Depleted()
+	p.Checkout() // grabs b1, so depleted should not increment
+	assert.Equal(t, p.Depleted(), max)
+}
