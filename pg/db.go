@@ -123,6 +123,13 @@ func (_ DB) Placeholder(i int) string {
 	}
 }
 
+// Exists for our test factory which are designed to work with different databases
+// For PG, the driver automatically handles JSON encoding.
+func (_ DB) JSON(value any) (any, error) {
+	return value, nil
+
+}
+
 func (db DB) MustExec(sql string, args ...any) {
 	if _, err := db.Exec(context.Background(), sql, args...); err != nil {
 		panic(err)

@@ -15,7 +15,7 @@ var db DB
 
 func init() {
 	var err error
-	db, err = New(tests.PG())
+	db, err = New(tests.PG("gobl_utils_test"))
 	if err != nil {
 		panic(err)
 	}

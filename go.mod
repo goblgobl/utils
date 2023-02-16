@@ -1,6 +1,6 @@
 module src.goblgobl.com/utils
 
-go 1.19
+go 1.20
 
 // replace src.goblgobl.com/tests => ../tests
 
@@ -12,7 +12,7 @@ require (
 	golang.org/x/crypto v0.3.0
 	golang.org/x/sync v0.1.0
 	src.goblgobl.com/sqlite v0.0.4
-	src.goblgobl.com/tests v0.0.5
+	src.goblgobl.com/tests v0.0.7
 )
 
 require (

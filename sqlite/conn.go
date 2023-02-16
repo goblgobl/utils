@@ -5,6 +5,7 @@ import (
 
 	"src.goblgobl.com/sqlite"
 	"src.goblgobl.com/utils"
+	"src.goblgobl.com/utils/json"
 	"src.goblgobl.com/utils/log"
 	"src.goblgobl.com/utils/typed"
 )
@@ -27,8 +28,7 @@ func New(filePath string, create bool) (Conn, error) {
 	return Conn{conn}, nil
 }
 
-// Exists for our test factory which are designed to work with
-// different databases
+// Exists for our test factory which are designed to work with different databases
 func (_ Conn) Placeholder(i int) string {
 	switch i {
 	case 0:
@@ -74,6 +74,15 @@ func (_ Conn) Placeholder(i int) string {
 	default:
 		return "?" + strconv.Itoa(i+1)
 	}
+}
+
+// Exists for our test factory which are designed to work with different databases
+// And, for SQLite, we can't just pass any object in to have it converted to JSON
+func (_ Conn) JSON(value any) (any, error) {
+	if value == nil {
+		return nil, nil
+	}
+	return json.Marshal(value)
 }
 
 func Scalar[T any](conn Conn, sql string, args ...any) (T, error) {
