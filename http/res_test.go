@@ -19,24 +19,24 @@ type TestResponse struct {
 	log    map[string]string
 }
 
-func Test_Ok_NoBody(t *testing.T) {
-	res := read(Ok(nil))
+func Test_OK_NoBody(t *testing.T) {
+	res := read(OK(nil))
 	assert.Equal(t, res.status, 200)
 	assert.Equal(t, len(res.body), 0)
 	assert.Equal(t, res.log["res"], "0")
 	assert.Equal(t, res.log["status"], "200")
 }
 
-func Test_Ok_Body(t *testing.T) {
-	res := read(Ok(map[string]any{"over": 9000}))
+func Test_OK_Body(t *testing.T) {
+	res := read(OK(map[string]any{"over": 9000}))
 	assert.Equal(t, res.status, 200)
 	assert.Equal(t, res.body, `{"over":9000}`)
 	assert.Equal(t, res.log["res"], "13")
 	assert.Equal(t, res.log["status"], "200")
 }
 
-func Test_Ok_InvalidBody(t *testing.T) {
-	res := read(Ok(make(chan bool)))
+func Test_OK_InvalidBody(t *testing.T) {
+	res := read(OK(make(chan bool)))
 
 	errorId := res.log["eid"]
 	assert.Equal(t, len(errorId), 36)
@@ -48,7 +48,37 @@ func Test_Ok_InvalidBody(t *testing.T) {
 	assert.Equal(t, res.json.Int("code"), 2002)
 	assert.Equal(t, res.json.String("error"), "internal server error")
 	assert.Equal(t, res.json.String("error_id"), errorId)
+}
 
+func Test_Created_NoBody(t *testing.T) {
+	res := read(Created(nil))
+	assert.Equal(t, res.status, 201)
+	assert.Equal(t, len(res.body), 0)
+	assert.Equal(t, res.log["res"], "0")
+	assert.Equal(t, res.log["status"], "201")
+}
+
+func Test_Created_Body(t *testing.T) {
+	res := read(Created(map[string]any{"over": 9000}))
+	assert.Equal(t, res.status, 201)
+	assert.Equal(t, res.body, `{"over":9000}`)
+	assert.Equal(t, res.log["res"], "13")
+	assert.Equal(t, res.log["status"], "201")
+}
+
+func Test_Created_InvalidBody(t *testing.T) {
+	res := read(Created(make(chan bool)))
+
+	errorId := res.log["eid"]
+	assert.Equal(t, len(errorId), 36)
+	assert.Equal(t, res.log["_code"], "2002")
+	assert.Equal(t, res.log["res"], "95")
+	assert.Equal(t, res.log["status"], "500")
+
+	assert.Equal(t, res.status, 500)
+	assert.Equal(t, res.json.Int("code"), 2002)
+	assert.Equal(t, res.json.String("error"), "internal server error")
+	assert.Equal(t, res.json.String("error_id"), errorId)
 }
 
 func Test_StaticNotFound(t *testing.T) {

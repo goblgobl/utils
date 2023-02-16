@@ -5,6 +5,7 @@ package json
 
 import (
 	stdlib "encoding/json"
+	"io"
 
 	json "github.com/goccy/go-json"
 )
@@ -17,4 +18,8 @@ func Marshal(data any) ([]byte, error) {
 
 func Unmarshal(data []byte, into any) error {
 	return json.Unmarshal(data, into)
+}
+
+func MarshalInto(data any, w io.Writer) error {
+	return json.NewEncoder(w).EncodeWithOption(data, json.UnorderedMap())
 }

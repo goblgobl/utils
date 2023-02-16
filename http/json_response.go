@@ -20,13 +20,17 @@ import (
 )
 
 var (
-	validationLogData = log.NewField().
+	ValidationLogData = log.NewField().
 				Int("_code", utils.RES_VALIDATION).
 				Int("status", 400).
 				Finalize()
 
-	OkLogData = log.NewField().
+	OKLogData = log.NewField().
 			Int("status", 200).
+			Finalize()
+
+	CreatedLogData = log.NewField().
+			Int("status", 201).
 			Finalize()
 )
 
@@ -34,21 +38,35 @@ type ValidationProvider interface {
 	Errors() []any
 }
 
-// body isn't known until runtime, but we know the status
-// and code and can put those in logData
-type DynamicResponse struct {
+type JSONResponse struct {
 	Status  int
 	Body    []byte
 	LogData log.Field
 }
 
-func (r DynamicResponse) Write(conn *fasthttp.RequestCtx, logger log.Logger) log.Logger {
+func NewJSONResponse(data any, status int, logData log.Field) Response {
+	var body []byte
+	if data != nil {
+		var err error
+		if body, err = json.Marshal(data); err != nil {
+			return SerializationError(err)
+		}
+	}
+
+	return JSONResponse{
+		Status:  status,
+		Body:    body,
+		LogData: logData,
+	}
+}
+
+func (r JSONResponse) Write(conn *fasthttp.RequestCtx, logger log.Logger) log.Logger {
 	conn.SetStatusCode(r.Status)
 	conn.SetBody(r.Body)
 	return logger.Field(r.LogData).Int("res", len(r.Body))
 }
 
-func Validation(validator ValidationProvider) DynamicResponse {
+func Validation(validator ValidationProvider) Response {
 	data := struct {
 		Code    int    `json:"code"`
 		Error   string `json:"error"`
@@ -58,30 +76,21 @@ func Validation(validator ValidationProvider) DynamicResponse {
 		Error:   "invalid data",
 		Invalid: validator.Errors(),
 	}
-	body, _ := json.Marshal(data)
-
-	return DynamicResponse{
-		Body:    body,
-		Status:  400,
-		LogData: validationLogData,
-	}
+	return NewJSONResponse(data, 400, ValidationLogData)
 }
 
-func Ok(data any) Response {
-	var body []byte
-	if data != nil {
-		var err error
-		if body, err = json.Marshal(data); err != nil {
-			return SerializationError(err)
-		}
-	}
-	return OkBytes(body)
+func OK(data any) Response {
+	return NewJSONResponse(data, 200, OKLogData)
 }
 
-func OkBytes(body []byte) DynamicResponse {
-	return DynamicResponse{
+func OKBytes(body []byte) Response {
+	return JSONResponse{
 		Status:  200,
 		Body:    body,
-		LogData: OkLogData,
+		LogData: OKLogData,
 	}
+}
+
+func Created(data any) Response {
+	return NewJSONResponse(data, 201, CreatedLogData)
 }
