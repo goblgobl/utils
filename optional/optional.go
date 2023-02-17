@@ -19,6 +19,11 @@ type Value[T any] struct {
 	Exists bool
 }
 
+type Int = Value[int]
+type Bool = Value[bool]
+type Float = Value[float64]
+type String = Value[string]
+
 func (v Value[T]) MarshalJSON() ([]byte, error) {
 	if !v.Exists {
 		return jsonNull, nil
@@ -46,18 +51,18 @@ func Null[T any]() Value[T] {
 	return Value[T]{}
 }
 
-func Bool(value bool) Value[bool] {
+func NewBool(value bool) Value[bool] {
 	return New[bool](value)
 }
 
-func Int(value int) Value[int] {
+func NewInt(value int) Value[int] {
 	return New[int](value)
 }
 
-func Float(value float64) Value[float64] {
+func NewFloat(value float64) Value[float64] {
 	return New[float64](value)
 }
 
-func String(value string) Value[string] {
+func NewString(value string) Value[string] {
 	return New[string](value)
 }

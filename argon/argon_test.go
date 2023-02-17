@@ -9,7 +9,7 @@ import (
 )
 
 func Test_Hash_And_Compare(t *testing.T) {
-	Config(1, 1024, 1)
+	Insecure()
 	for i := 0; i < 40; i++ {
 		plainText := tests.Generator.String()
 		h, err := Hash(plainText)

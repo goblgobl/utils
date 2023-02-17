@@ -78,9 +78,9 @@ func (t Typed) Bool(key string) bool {
 	return t.BoolOr(key, false)
 }
 
-func (t Typed) OptionalBool(key string) optional.Value[bool] {
+func (t Typed) OptionalBool(key string) optional.Bool {
 	if value, exists := t.BoolIf(key); exists {
-		return optional.Bool(value)
+		return optional.NewBool(value)
 	}
 	return optional.NullBool
 }
@@ -135,9 +135,9 @@ func (t Typed) Int(key string) int {
 	return t.IntOr(key, 0)
 }
 
-func (t Typed) OptionalInt(key string) optional.Value[int] {
+func (t Typed) OptionalInt(key string) optional.Int {
 	if value, exists := t.IntIf(key); exists {
-		return optional.Int(value)
+		return optional.NewInt(value)
 	}
 	return optional.NullInt
 }
@@ -174,9 +174,9 @@ func (t Typed) Float(key string) float64 {
 	return t.FloatOr(key, 0)
 }
 
-func (t Typed) OptionalFloat(key string) optional.Value[float64] {
+func (t Typed) OptionalFloat(key string) optional.Float {
 	if value, exists := t.FloatIf(key); exists {
-		return optional.Float(value)
+		return optional.NewFloat(value)
 	}
 	return optional.NullFloat
 }
@@ -222,9 +222,9 @@ func (t Typed) String(key string) string {
 	return t.StringOr(key, "")
 }
 
-func (t Typed) OptionalString(key string) optional.Value[string] {
+func (t Typed) OptionalString(key string) optional.String {
 	if value, exists := t.StringIf(key); exists {
-		return optional.String(value)
+		return optional.NewString(value)
 	}
 	return optional.NullString
 }

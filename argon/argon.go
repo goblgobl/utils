@@ -39,6 +39,19 @@ func init() {
 	Config(4, 64*1024, 2)
 }
 
+// make tests faster
+func Insecure() {
+	Config(1, 1024, 1)
+}
+
+func MustHash(plainText string) string {
+	hashed, err := Hash(plainText)
+	if err != nil {
+		panic(err)
+	}
+	return hashed
+}
+
 func Hash(plainText string) (string, error) {
 	var salt [16]byte
 	saltSlice := salt[:]
