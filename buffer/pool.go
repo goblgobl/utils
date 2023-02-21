@@ -87,7 +87,3 @@ func Checkout(maxSize int) *Buffer {
 	b.max = maxSize
 	return b
 }
-
-func Release(b *Buffer) {
-
-}

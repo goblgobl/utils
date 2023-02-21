@@ -16,6 +16,10 @@ func Marshal(data any) ([]byte, error) {
 	return json.Marshal(data)
 }
 
+func Pretty(data any) ([]byte, error) {
+	return json.MarshalIndent(data, "", "  ")
+}
+
 func Unmarshal(data []byte, into any) error {
 	return json.Unmarshal(data, into)
 }

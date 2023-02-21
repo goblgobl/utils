@@ -132,14 +132,14 @@ func Test_ServerError_FullError(t *testing.T) {
 }
 
 func Test_Validation(t *testing.T) {
-	rules := validation.Object().
-		Field("field1", validation.String().Required()).
-		Field("field2", validation.Int().Min(10))
+	rules := validation.Object[any]().
+		Field("field1", validation.String[any]().Required()).
+		Field("field2", validation.Int[any]().Min(10))
 
-	result := validation.NewResult(5)
-	rules.Validate(map[string]any{"over": 9000, "field2": 3}, result)
+	vc := validation.NewContext[any](5)
+	rules.Validate(map[string]any{"over": 9000, "field2": 3}, vc)
 
-	res := read(Validation(result))
+	res := read(Validation(vc))
 	assert.Equal(t, res.status, 400)
 	assert.Equal(t, res.json.Int("code"), 2004)
 	assert.Equal(t, res.json.String("error"), "invalid data")

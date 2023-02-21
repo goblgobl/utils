@@ -2,7 +2,7 @@ module src.goblgobl.com/utils
 
 go 1.20
 
-// replace src.goblgobl.com/tests => ../tests
+replace src.goblgobl.com/tests => ../tests
 
 require (
 	github.com/goccy/go-json v0.10.0
