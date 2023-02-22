@@ -10,7 +10,8 @@ import (
 	json "github.com/goccy/go-json"
 )
 
-type Number stdlib.Number
+type Number = stdlib.Number
+type RawMessage = stdlib.RawMessage
 
 func Marshal(data any) ([]byte, error) {
 	return json.Marshal(data)

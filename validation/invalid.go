@@ -38,19 +38,19 @@ func InvalidStringPattern(message ...string) *Invalid {
 // Since this is a common "data" to have (e.g. min string length, min integer)
 // it helps to have this type with the accompanying MinData func to ensure consistency
 type minData struct {
-	Min int `json:"min"`
+	Min any `json:"min"`
 }
 
-func MinData(min int) minData {
+func MinData(min any) minData {
 	return minData{min}
 }
 
 // see minData types for description
 type maxData struct {
-	Max int `json:"max"`
+	Max any `json:"max"`
 }
 
-func MaxData(max int) maxData {
+func MaxData(max any) maxData {
 	return maxData{max}
 }
 
@@ -65,11 +65,11 @@ func ValueData(value any) valueData {
 
 // see minData types for description
 type rangeData struct {
-	Min int `json:"min"`
-	Max int `json:"max"`
+	Min any `json:"min"`
+	Max any `json:"max"`
 }
 
-func RangeData(min int, max int) rangeData {
+func RangeData(min any, max any) rangeData {
 	return rangeData{min, max}
 }
 
