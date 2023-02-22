@@ -162,9 +162,9 @@ func Test_NoEnvHandler_LogsError(t *testing.T) {
 }
 
 type TestEnv struct {
+	logger   log.Logger
 	id       int
 	released bool
-	logger   log.Logger
 }
 
 func testEnv(id int) *TestEnv {

@@ -32,17 +32,15 @@ var (
 )
 
 type Buffer struct {
+	// could be nil (if created outside of the pool, or if the pool
+	// was empty and created it on the fly)
+	pool *Pool
+
 	// Writes might fail due to a full buffer (when we've reached
 	// our maximum size). Rather than having each call need to
 	// check for err, we just noop every write operation when
 	// err != nil and return the error on reads.
 	err error
-
-	// the maximum size we'll allow this buffer to grow
-	max int
-
-	// the position within data our last write was at
-	pos int
 
 	// fixed-size and pre-allocated data that won't grow
 	static []byte
@@ -51,9 +49,11 @@ type Buffer struct {
 	// data or a dynamically allocated larger space (up to max size)
 	data []byte
 
-	// could be nil (if created outside of the pool, or if the pool
-	// was empty and created it on the fly)
-	pool *Pool
+	// the maximum size we'll allow this buffer to grow
+	max int
+
+	// the position within data our last write was at
+	pos int
 
 	// the position within out data our last read was at
 	read int

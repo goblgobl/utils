@@ -11,8 +11,8 @@ import (
 type Migrate func(tx pgx.Tx) error
 
 type Migration struct {
-	Version uint16
 	Migrate Migrate
+	Version uint16
 }
 
 func MigrateAll(db DB, appName string, migrations []Migration) error {

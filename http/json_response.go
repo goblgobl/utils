@@ -39,9 +39,9 @@ type ValidationProvider interface {
 }
 
 type JSONResponse struct {
-	Status  int
 	Body    []byte
 	LogData log.Field
+	Status  int
 }
 
 func NewJSONResponse(data any, status int, logData log.Field) Response {
@@ -68,13 +68,13 @@ func (r JSONResponse) Write(conn *fasthttp.RequestCtx, logger log.Logger) log.Lo
 
 func Validation(validator ValidationProvider) Response {
 	data := struct {
-		Code    int    `json:"code"`
 		Error   string `json:"error"`
 		Invalid []any  `json:"invalid"`
+		Code    int    `json:"code"`
 	}{
-		Code:    utils.RES_VALIDATION,
 		Error:   "invalid data",
 		Invalid: validator.Errors(),
+		Code:    utils.RES_VALIDATION,
 	}
 	return NewJSONResponse(data, 400, ValidationLogData)
 }

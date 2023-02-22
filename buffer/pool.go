@@ -6,11 +6,11 @@ import (
 )
 
 type Pool struct {
+	list     chan *Buffer
 	minSize  uint32
 	maxSize  uint32
 	depleted uint64
 	expanded uint64
-	list     chan *Buffer
 }
 
 func NewPoolFromConfig(config Config) *Pool {

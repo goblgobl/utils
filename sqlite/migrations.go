@@ -9,8 +9,8 @@ import (
 type Migrate func(conn Conn) error
 
 type Migration struct {
-	Version uint16
 	Migrate Migrate
+	Version uint16
 }
 
 func MigrateAll(conn Conn, migrations []Migration) error {

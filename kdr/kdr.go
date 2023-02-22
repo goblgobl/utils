@@ -11,8 +11,8 @@ const (
 )
 
 type Value[T any] struct {
-	Action      KdrAction
 	Replacement T
+	Action      KdrAction
 }
 
 func (v Value[T]) IsKeep() bool {

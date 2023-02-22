@@ -10,14 +10,13 @@ import (
 type ArrayFuncValidator[T any] func(value []any, ctx *Context[T]) any
 
 type ArrayValidator[T any] struct {
-	dflt      any
-	required  bool
-	minLength optional.Int
-	maxLength optional.Int
-	validator Validator[T]
-	fn        ArrayFuncValidator[T]
-
 	invalidLength *Invalid
+	validator     Validator[T]
+	fn            ArrayFuncValidator[T]
+	dflt          any
+	minLength     optional.Int
+	maxLength     optional.Int
+	required      bool
 }
 
 func Array[T any]() *ArrayValidator[T] {

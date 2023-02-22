@@ -48,11 +48,11 @@ func (m Map[V]) shard(id string) *shard[V] {
 }
 
 type shard[V any] struct {
-	sync.RWMutex
 	sf      *singleflight.Group
-	lookup  map[string]V
-	loader  Loader[V]
 	cleaner func(v V)
+	loader  Loader[V]
+	lookup  map[string]V
+	sync.RWMutex
 }
 
 func (s *shard[V]) get(id string) (V, error) {

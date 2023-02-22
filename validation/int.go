@@ -11,14 +11,13 @@ import (
 type IntFuncValidator[T any] func(value int, ctx *Context[T]) any
 
 type IntValidator[T any] struct {
-	dflt     any
-	required bool
-	nullable bool
-	minValue optional.Int
-	maxValue optional.Int
-	fn       IntFuncValidator[T]
-
+	fn           IntFuncValidator[T]
 	invalidValue *Invalid
+	dflt         any
+	minValue     optional.Int
+	maxValue     optional.Int
+	required     bool
+	nullable     bool
 }
 
 func Int[T any]() *IntValidator[T] {

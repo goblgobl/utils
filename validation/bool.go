@@ -3,12 +3,11 @@ package validation
 type BoolFuncValidator[T any] func(value bool, ctx *Context[T]) any
 
 type BoolValidator[T any] struct {
-	dflt     any
-	required bool
-	nullable bool
-	fn       BoolFuncValidator[T]
-
 	invalidValue *Invalid
+	fn           BoolFuncValidator[T]
+	dflt         any
+	required     bool
+	nullable     bool
 }
 
 func Bool[T any]() *BoolValidator[T] {

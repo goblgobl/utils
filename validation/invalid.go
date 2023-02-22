@@ -16,9 +16,9 @@ var (
 )
 
 type Invalid struct {
-	Code  uint32 `json:"code"`
 	Data  any    `json:"data"` //TODO: add omitempty https://github.com/goccy/go-json/issues/391
 	Error string `json:"error"`
+	Code  uint32 `json:"code"`
 }
 
 type InvalidField struct {

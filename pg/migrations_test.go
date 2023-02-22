@@ -30,8 +30,8 @@ func Test_MigrateAll_NormalRun(t *testing.T) {
 	db.Exec(bg, "drop table if exists goblgobl_migrations")
 	migrateTest := func(appName string) {
 		err := MigrateAll(db, appName, []Migration{
-			Migration{1, MigrateOne},
-			Migration{2, MigrateTwo},
+			Migration{MigrateOne, 1},
+			Migration{MigrateTwo, 2},
 		})
 		assert.Nil(t, err)
 
@@ -73,9 +73,9 @@ func Test_MigrateAll_Error(t *testing.T) {
 	db.Exec(bg, "drop table if exists goblgobl_migrations")
 	migrateTest := func(appName string) {
 		err := MigrateAll(db, appName, []Migration{
-			Migration{1, MigrateOne},
-			Migration{2, MigrateTwo},
-			Migration{3, MigrateErr},
+			Migration{MigrateOne, 1},
+			Migration{MigrateTwo, 2},
+			Migration{MigrateErr, 3},
 		})
 		assert.StringContains(t, err.Error(), "Failed to run pg migration #3")
 

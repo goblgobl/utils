@@ -13,9 +13,9 @@ type ObjectField[T any] struct {
 
 type ObjectValidator[T any] struct {
 	dflt     any
-	required bool
 	fn       ObjectFuncValidator[T]
 	fields   []ObjectField[T]
+	required bool
 }
 
 func Object[T any]() *ObjectValidator[T] {

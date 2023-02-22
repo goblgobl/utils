@@ -16,8 +16,8 @@ some optimizations to take place.
 */
 
 type Field struct {
-	kv     []byte
 	fields map[string]any
+	kv     []byte
 }
 
 func NewField() *Field {

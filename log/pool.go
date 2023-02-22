@@ -18,11 +18,11 @@ type Factory func(p *Pool, level Level, request bool) Logger
 
 type Pool struct {
 	field    *Field
+	factory  Factory
+	list     chan Logger
 	depleted uint64
 	level    Level
 	requests bool
-	factory  Factory
-	list     chan Logger
 }
 
 func NewPool(count uint16, level Level, requests bool, factory Factory, field *Field) *Pool {

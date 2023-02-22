@@ -34,14 +34,20 @@ import (
 var binaryEncoder = base64.RawURLEncoding
 
 type KvLogger struct {
-	// the position in buffer to write to next
-	pos uint64
-
 	// reference back into our pool
 	pool *Pool
 
 	// buffer that we write our message to
 	buffer []byte
+
+	// The log level that we're logging.
+	level Level
+
+	// Whether or not we're logging request messages
+	requests bool
+
+	// the position in buffer to write to next
+	pos uint64
 
 	// A logger can have a fixed piece of data which is
 	// always included (e.g pid=$PROJECT_ID for a project-owned
@@ -54,12 +60,6 @@ type KvLogger struct {
 	// After logging a message, pos == multiUseLen. Only
 	// on reset/release will pos == fixedLen
 	multiUseLen uint64
-
-	// The log level that we're logging.
-	level Level
-
-	// Whether or not we're logging request messages
-	requests bool
 }
 
 func NewKvLogger(maxSize uint32, pool *Pool, level Level, requests bool) *KvLogger {

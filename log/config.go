@@ -7,10 +7,10 @@ import (
 )
 
 type Config struct {
-	Level    string   `json:"level"`
-	PoolSize uint16   `json:"pool_size"`
-	Format   string   `json:"format"`
 	Requests *bool    `json:"requests"`
+	Level    string   `json:"level"`
+	Format   string   `json:"format"`
+	PoolSize uint16   `json:"pool_size"`
 	KV       KvConfig `json:"kv"`
 }
 

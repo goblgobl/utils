@@ -11,19 +11,18 @@ type StringTransform func(value string) string
 type StringFuncValidator[T any] func(value string, ctx *Context[T]) any
 
 type StringValidator[T any] struct {
-	dflt      any
-	required  bool
-	nullable  bool
-	minLength int
-	maxLength int
-	pattern   *regexp.Regexp
-	choices   []string
-	tx        StringTransform
-	fn        StringFuncValidator[T]
-
 	invalidLength  *Invalid
 	invalidChoice  *Invalid
 	invalidPattern *Invalid
+	pattern        *regexp.Regexp
+	fn             StringFuncValidator[T]
+	tx             StringTransform
+	dflt           any
+	choices        []string
+	minLength      int
+	maxLength      int
+	required       bool
+	nullable       bool
 }
 
 func String[T any]() *StringValidator[T] {

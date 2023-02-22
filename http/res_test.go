@@ -13,10 +13,10 @@ import (
 )
 
 type TestResponse struct {
-	status int
-	body   string
 	json   typed.Typed
 	log    map[string]string
+	body   string
+	status int
 }
 
 func Test_OK_NoBody(t *testing.T) {

@@ -56,13 +56,13 @@ func ServerError(err error, fullError bool) Response {
 	}
 
 	data := struct {
-		Code    int    `json:"code"`
 		Error   string `json:"error"`
 		ErrorId string `json:"error_id"`
+		Code    int    `json:"code"`
 	}{
 		ErrorId: errorId,
-		Code:    utils.RES_SERVER_ERROR,
 		Error:   errorMessage,
+		Code:    utils.RES_SERVER_ERROR,
 	}
 	body, _ := json.Marshal(data)
 	return NewErrorIdResponse(err, errorId, body, serverErrorLogData)
@@ -72,13 +72,13 @@ func SerializationError(err error) Response {
 	errorId := uuid.String()
 
 	data := struct {
-		Code    int    `json:"code"`
 		Error   string `json:"error"`
 		ErrorId string `json:"error_id"`
+		Code    int    `json:"code"`
 	}{
 		ErrorId: errorId,
-		Code:    utils.RES_SERIALIZATION_ERROR,
 		Error:   "internal server error",
+		Code:    utils.RES_SERIALIZATION_ERROR,
 	}
 	body, _ := json.Marshal(data)
 

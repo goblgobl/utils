@@ -7,9 +7,9 @@ import (
 
 // An error that's designed to be logged in a more structured manner
 type StructuredError struct {
-	Code int            `json:"code"`
-	Err  error          `json:"err"`
 	Data map[string]any `json:"data"`
+	Err  error          `json:"err"`
+	Code int            `json:"code"`
 }
 
 func (e *StructuredError) Error() string {

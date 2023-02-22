@@ -3,9 +3,9 @@ package validation
 type AnyFuncValidator[T any] func(value any, ctx *Context[T]) any
 
 type AnyValidator[T any] struct {
+	fn       AnyFuncValidator[T]
 	dflt     any
 	required bool
-	fn       AnyFuncValidator[T]
 }
 
 func Any[T any]() *AnyValidator[T] {

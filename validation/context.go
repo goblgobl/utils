@@ -8,34 +8,34 @@ import (
 )
 
 type Context[T any] struct {
+	pool *Pool[T]
+
+	// The first currently being validated
+	Field *Field
+
+	// the full user input
+	Input typed.Typed
+
+	// The current object being looked at (this is different than Input for arrays
+	// and nested objects)
+	Object typed.Typed
+
+	// app-specific data that we want to make available to validation callbacks
+	Env T
+
+	// stack of array indexes as we go deeper and deeper into nesting
+	arrayIndexes []int
+
+	errors []any
+
 	// errors is a pre-allocated array of len(maxErrors).
 	// errLen keeps track of how many erros we've already added so that we can
 	// use errors[errLen] = invalid when adding an error
 	// errLen is reset to 0 when this context is released (and thus can be reused)
 	errLen int
 
-	errors []any
-
 	// how deeply nested we are (only cares about arrays)
 	depth int
-
-	// stack of array indexes as we go deeper and deeper into nesting
-	arrayIndexes []int
-
-	// app-specific data that we want to make available to validation callbacks
-	Env T
-
-	// the full user input
-	Input typed.Typed
-
-	// The first currently being validated
-	Field *Field
-
-	// The current object being looked at (this is different than Input for arrays
-	// and nested objects)
-	Object typed.Typed
-
-	pool *Pool[T]
 }
 
 func NewContext[T any](maxErrors uint16) *Context[T] {

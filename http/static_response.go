@@ -19,9 +19,9 @@ var (
 // We know the status/body/logData upfront (lets us optimize
 // EnhanceLog)
 type StaticResponse struct {
-	status  int
 	body    []byte
 	logData log.Field
+	status  int
 }
 
 func (r StaticResponse) Write(conn *fasthttp.RequestCtx, logger log.Logger) log.Logger {
@@ -32,11 +32,11 @@ func (r StaticResponse) Write(conn *fasthttp.RequestCtx, logger log.Logger) log.
 
 func StaticError(status int, code int, error string) StaticResponse {
 	data := struct {
-		Code  int    `json:"code"`
 		Error string `json:"error"`
+		Code  int    `json:"code"`
 	}{
-		Code:  code,
 		Error: error,
+		Code:  code,
 	}
 	body, err := json.Marshal(data)
 	if err != nil {

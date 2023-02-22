@@ -10,14 +10,14 @@ import (
 type FloatFuncValidator[T any] func(value float64, ctx *Context[T]) any
 
 type FloatValidator[T any] struct {
-	dflt     any
-	required bool
-	nullable bool
-	minValue optional.Float
-	maxValue optional.Float
-	fn       FloatFuncValidator[T]
+	fn FloatFuncValidator[T]
 
 	invalidValue *Invalid
+	dflt         any
+	minValue     optional.Float
+	maxValue     optional.Float
+	required     bool
+	nullable     bool
 }
 
 func Float[T any]() *FloatValidator[T] {
