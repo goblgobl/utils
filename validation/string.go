@@ -109,6 +109,18 @@ func (v *StringValidator[T]) Default(dflt any) *StringValidator[T] {
 	return v
 }
 
+func (v *StringValidator[T]) Min(min int) *StringValidator[T] {
+	v.minLength = min
+	v.invalidLength = InvalidStringLength(min, v.maxLength)
+	return v
+}
+
+func (v *StringValidator[T]) Max(max int) *StringValidator[T] {
+	v.maxLength = max
+	v.invalidLength = InvalidStringLength(v.minLength, max)
+	return v
+}
+
 func (v *StringValidator[T]) Length(min int, max int) *StringValidator[T] {
 	v.minLength = min
 	v.maxLength = max

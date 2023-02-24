@@ -62,13 +62,13 @@ func Test_String_Type(t *testing.T) {
 }
 
 func Test_String_Length(t *testing.T) {
-	f1 := String[E]().Length(0, 3)
-	f2 := String[E]().Length(2, 0)
+	f1 := String[E]().Max(3)
+	f2 := String[E]().Min(2)
 	f3 := String[E]().Length(2, 4)
 	o := Object[E]().
 		Field("f1", f1).Field("f1_clone", f1.Clone()).
 		Field("f2", f2).Field("f2_clone", f2.Clone()).
-		Field("f3", f3).Field("f3_clone", f3.Clone())
+		Field("f3", f3).Field("f3_clone", f3.Clone().Min(2).Max(4))
 
 	testValidator(t, o, "f1", "1234", "f2", "1", "f3", "1", "f1_clone", "1234", "f2_clone", "1", "f3_clone", "1").
 		Field("f1", InvalidStringLength(0, 3)).
