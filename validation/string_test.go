@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 
@@ -120,22 +121,25 @@ func Test_String_Choice(t *testing.T) {
 
 func Test_String_Pattern(t *testing.T) {
 	f1 := String[E]().Pattern("\\d.")
+	f2 := String[E]().Regexp(regexp.MustCompile("\\d."))
 	o1 := Object[E]().
-		Field("f", f1).Field("f_clone", f1.Clone())
+		Field("f", f1).Field("f2", f2).Field("f_clone", f1.Clone())
 
-	testValidator(t, o1, "f", "1d", "f_clone", "1d").
-		FieldsHaveNoErrors("f", "f_clone")
+	testValidator(t, o1, "f", "1d", "f2", "1d", "f_clone", "1d").
+		FieldsHaveNoErrors("f", "f_clone", "f2")
 
-	testValidator(t, o1, "f", "1", "f_clone", "1").
+	testValidator(t, o1, "f", "1", "f2", "1", "f_clone", "1").
 		Field("f", InvalidStringPattern()).
 		FieldMessage("f", "is not valid"). // default/generic error
+		Field("f2", InvalidStringPattern()).
+		FieldMessage("f2", "is not valid"). // default/generic error
 		Field("f_clone", InvalidStringPattern()).
 		FieldMessage("f_clone", "is not valid") // default/generic error
 
 	// explicit error message
-	f2 := String[E]().Pattern("^\\d$", "must be a number")
+	f3 := String[E]().Pattern("^\\d$", "must be a number")
 	o2 := Object[E]().
-		Field("f", f2).Field("f_clone", f2.Clone())
+		Field("f", f3).Field("f_clone", f3.Clone())
 
 	testValidator(t, o2, "f", "1d", "f_clone", "1d").
 		Field("f", InvalidStringPattern()).

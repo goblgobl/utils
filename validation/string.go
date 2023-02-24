@@ -134,6 +134,12 @@ func (v *StringValidator[T]) Pattern(pattern string, message ...string) *StringV
 	return v
 }
 
+func (v *StringValidator[T]) Regexp(pattern *regexp.Regexp, message ...string) *StringValidator[T] {
+	v.pattern = pattern
+	v.invalidPattern = InvalidStringPattern(message...)
+	return v
+}
+
 func (v *StringValidator[T]) Choice(choices ...string) *StringValidator[T] {
 	v.choices = choices
 	v.invalidChoice = InvalidStringChoice(choices)

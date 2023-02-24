@@ -5,14 +5,15 @@ import (
 )
 
 var (
-	Required   = &Invalid{Code: utils.VAL_REQUIRED, Error: "required"}
-	TypeInt    = &Invalid{Code: utils.VAL_INT_TYPE, Error: "must be an integer"}
-	TypeUUID   = &Invalid{Code: utils.VAL_UUID_TYPE, Error: "must be a uuid"}
-	TypeBool   = &Invalid{Code: utils.VAL_BOOL_TYPE, Error: "must be a boolean"}
-	TypeArray  = &Invalid{Code: utils.VAL_ARRAY_TYPE, Error: "must be an array"}
-	TypeString = &Invalid{Code: utils.VAL_STRING_TYPE, Error: "must be a string"}
-	TypeFloat  = &Invalid{Code: utils.VAL_FLOAT_TYPE, Error: "must be a number"}
-	TypeObject = &Invalid{Code: utils.VAL_OBJECT_TYPE, Error: "must be an object"}
+	Required      = &Invalid{Code: utils.VAL_REQUIRED, Error: "required"}
+	TypeInt       = &Invalid{Code: utils.VAL_INT_TYPE, Error: "must be an integer"}
+	TypeUUID      = &Invalid{Code: utils.VAL_UUID_TYPE, Error: "must be a uuid"}
+	TypeBool      = &Invalid{Code: utils.VAL_BOOL_TYPE, Error: "must be a boolean"}
+	TypeArray     = &Invalid{Code: utils.VAL_ARRAY_TYPE, Error: "must be an array"}
+	TypeString    = &Invalid{Code: utils.VAL_STRING_TYPE, Error: "must be a string"}
+	TypeFloat     = &Invalid{Code: utils.VAL_FLOAT_TYPE, Error: "must be a number"}
+	TypeObject    = &Invalid{Code: utils.VAL_OBJECT_TYPE, Error: "must be an object"}
+	StringPattern = &Invalid{Code: utils.VAL_STRING_PATTERN, Error: "is not valid"}
 )
 
 type Invalid struct {
@@ -27,11 +28,13 @@ type InvalidField struct {
 }
 
 func InvalidStringPattern(message ...string) *Invalid {
-	err := "is not valid"
-	if message != nil {
-		err = message[0]
+	if message == nil {
+		return StringPattern
 	}
-	return &Invalid{Error: err, Code: utils.VAL_STRING_PATTERN}
+	return &Invalid{
+		Error: message[0],
+		Code:  utils.VAL_STRING_PATTERN,
+	}
 }
 
 // Used to create a data field of type: `data: {min: #}`
