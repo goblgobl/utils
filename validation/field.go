@@ -59,3 +59,7 @@ func BuildField(flat string) *Field {
 		Flat: flat,
 	}
 }
+
+func SimpleField(name string) *Field {
+	return &Field{Flat: name}
+}

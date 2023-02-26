@@ -84,7 +84,8 @@ func Test_Created_InvalidBody(t *testing.T) {
 func Test_StaticNotFound(t *testing.T) {
 	res := read(StaticNotFound(1023))
 	assert.Equal(t, res.status, 404)
-	assert.Equal(t, res.body, `{"code":1023,"error":"not found"}`)
+	assert.Equal(t, res.json.Int("code"), 1023)
+	assert.Equal(t, res.json.String("error"), "not found")
 	assert.Equal(t, res.log["_code"], "1023")
 	assert.Equal(t, res.log["res"], "33")
 	assert.Equal(t, res.log["status"], "404")
@@ -93,7 +94,8 @@ func Test_StaticNotFound(t *testing.T) {
 func Test_StaticError(t *testing.T) {
 	res := read(StaticError(511, 1002, "oops"))
 	assert.Equal(t, res.status, 511)
-	assert.Equal(t, res.body, `{"code":1002,"error":"oops"}`)
+	assert.Equal(t, res.json.Int("code"), 1002)
+	assert.Equal(t, res.json.String("error"), "oops")
 	assert.Equal(t, res.log["_code"], "1002")
 	assert.Equal(t, res.log["res"], "28")
 	assert.Equal(t, res.log["status"], "511")
