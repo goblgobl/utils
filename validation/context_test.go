@@ -36,6 +36,50 @@ func Test_Context_InvalidWithField(t *testing.T) {
 	assert.Equal(t, invalid.Error, "required")
 }
 
+func Test_Context_Array(t *testing.T) {
+	ctx := NewContext[int](4)
+
+	ctx.StartArray()
+	ctx.ArrayIndex(1)
+	ctx.Field = &Field{Path: []string{"user", "", "name"}}
+	ctx.InvalidField(Required)
+	invalid := ctx.Errors()[0].(InvalidField)
+	assert.Equal(t, invalid.Field, "user.1.name")
+
+	ctx.StartArray()
+	ctx.ArrayIndex(2)
+	ctx.Field = &Field{Path: []string{"user", "", "tags", ""}}
+	ctx.InvalidField(Required)
+	invalid = ctx.Errors()[1].(InvalidField)
+	assert.Equal(t, invalid.Field, "user.1.tags.2")
+
+	ctx.EndArray()
+	ctx.ArrayIndex(3)
+	ctx.Field = &Field{Path: []string{"user", "", "name"}}
+	ctx.InvalidField(Required)
+	invalid = ctx.Errors()[2].(InvalidField)
+	assert.Equal(t, invalid.Field, "user.3.name")
+}
+
+func Test_Context_Suspend_And_Resume_Array(t *testing.T) {
+	ctx := NewContext[int](4)
+
+	ctx.StartArray()
+	ctx.ArrayIndex(5)
+
+	d := ctx.SuspendArray()
+	ctx.Field = &Field{Flat: "x"}
+	ctx.InvalidField(Required)
+	invalid := ctx.Errors()[0].(InvalidField)
+	assert.Equal(t, invalid.Field, "x")
+
+	ctx.ResumeArray(d)
+	ctx.Field = &Field{Path: []string{"user", "", "name"}}
+	ctx.InvalidField(Required)
+	invalid = ctx.Errors()[1].(InvalidField)
+	assert.Equal(t, invalid.Field, "user.5.name")
+}
+
 func Test_Context_Release(t *testing.T) {
 	p := NewPool[any](1, 3)
 	ctx := p.Checkout(nil)

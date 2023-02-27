@@ -10,6 +10,10 @@ import (
 type Context[T any] struct {
 	pool *Pool[T]
 
+	// For errors within arrays, we need to create the field name dynamically
+	// (e.g. users.#.name). We'll use this scrap space
+	scrap []byte
+
 	// The first currently being validated
 	Field *Field
 
@@ -68,18 +72,36 @@ func (c *Context[T]) Validate(field *Field, value any, validator Validator[T]) (
 // Arrays can be deeply nested. We keep a stack of values indicating what array
 // index we're currently at, at each level.
 // StartArray adds a new depth to the stack
-func (r *Context[T]) StartArray() {
-	r.depth += 1
+func (c *Context[T]) StartArray() {
+	c.depth += 1
 }
 
 // Sets the index array for the current array
-func (r *Context[T]) ArrayIndex(i int) {
-	r.arrayIndexes[r.depth] = i
+func (c *Context[T]) ArrayIndex(i int) {
+	c.arrayIndexes[c.depth] = i
 }
 
 // Removes an array from the stack
-func (r *Context[T]) EndArray() {
-	r.depth -= 1
+func (c *Context[T]) EndArray() {
+	c.depth -= 1
+}
+
+// This is an advanced and very hacky thing. It's generally a "good thing" that
+// this context is stateful. But in some cases, a caller might need more flexibility.
+// This came up because within the process of validating an array, we needed
+// to validate some other data which would not inherit the array index. This
+// call erases the array state of the context. It returns this state (which is
+// just the depth) to the caller, so that the caller can pass it back to ResumeArray
+// when it's time to go back to the normal valiation
+func (c *Context[T]) SuspendArray() int {
+	depth := c.depth
+	c.depth = -1
+	return depth
+}
+
+// See SuspendArray
+func (c *Context[T]) ResumeArray(depth int) {
+	c.depth = depth
 }
 
 func (c *Context[T]) InvalidField(invalid *Invalid) {
@@ -94,13 +116,15 @@ func (c *Context[T]) InvalidWithField(invalid *Invalid, field *Field) {
 		return
 	}
 
-	// we're in an array (possibly deeply nested), to the field name
+	// We're in an array (possibly deeply nested), so the field name
 	// depends on the array index (thus it's dynamic)
-	// TODO: optimize this code
 	var w strings.Builder
 
-	// Over allocate a little so that we likely won't have to allocate + copy.
-	w.Grow(len(field.Name) + 20)
+	// This memory has to live as long as the context, but within 1 context, we
+	// might need multiple (one for each error to a dynamic field). I'm struggling
+	// to find a good way to avoid this allocation.
+	// Over-allocate a little so that we likely won't have to allocate + copy.
+	w.Grow(len(field.Flat) + 15)
 
 	indexIndex := 0
 	indexes := c.arrayIndexes
@@ -113,10 +137,10 @@ func (c *Context[T]) InvalidWithField(invalid *Invalid, field *Field) {
 				// of the context
 				break
 			}
-			w.WriteByte('.')
 			index := indexes[indexIndex]
-			w.WriteString(strconv.Itoa(index))
 			indexIndex += 1
+			w.WriteByte('.')
+			w.WriteString(strconv.Itoa(index))
 		} else {
 			w.WriteByte('.')
 			w.WriteString(part)
