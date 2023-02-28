@@ -3,7 +3,6 @@ package buffer
 import (
 	"errors"
 	"io"
-	"sync/atomic"
 
 	"src.goblgobl.com/utils"
 	"src.goblgobl.com/utils/log"
@@ -32,9 +31,7 @@ var (
 )
 
 type Buffer struct {
-	// could be nil (if created outside of the pool, or if the pool
-	// was empty and created it on the fly)
-	pool *Pool
+	release func(*Buffer)
 
 	// Writes might fail due to a full buffer (when we've reached
 	// our maximum size). Rather than having each call need to
@@ -87,9 +84,9 @@ func (b *Buffer) Reset() {
 }
 
 func (b *Buffer) Release() {
-	if pool := b.pool; pool != nil {
+	if release := b.release; release != nil {
 		b.Reset()
-		pool.list <- b
+		release(b)
 	}
 }
 
@@ -257,10 +254,7 @@ func (b *Buffer) ensureCapacity(l int) bool {
 		newLen = max
 	}
 
-	// track how often we expand beyond our static buffer
-	if pool := b.pool; pool != nil && &data[0] == &b.static[0] {
-		atomic.AddUint64(&pool.expanded, 1)
-	}
+	//TODO: track how often we expand beyond our static buffer
 
 	newData := make([]byte, newLen)
 	copy(newData, data)

@@ -1,7 +1,7 @@
 package log
 
 import (
-	"sync/atomic"
+	"src.goblgobl.com/utils/concurrent"
 )
 
 type Level uint8
@@ -14,52 +14,31 @@ const (
 	NONE
 )
 
-type Factory func(p *Pool, level Level, request bool) Logger
+type Factory func(release func(Logger), level Level, request bool) Logger
 
 type Pool struct {
+	*concurrent.Pool[Logger]
 	field    *Field
-	factory  Factory
-	list     chan Logger
-	depleted uint64
 	level    Level
 	requests bool
 }
 
 func NewPool(count uint16, level Level, requests bool, factory Factory, field *Field) *Pool {
-	list := make(chan Logger, count)
-	p := &Pool{
-		list:     list,
+	return &Pool{
 		level:    level,
 		field:    field,
 		requests: requests,
-		factory:  factory,
+		Pool:     concurrent.NewPool[Logger](uint32(count), pooledLoggerFactory(factory, level, requests, field)),
 	}
+}
 
-	for i := uint16(0); i < count; i++ {
-		l := factory(p, level, requests)
+func pooledLoggerFactory(factory Factory, level Level, requests bool, field *Field) func(func(l Logger)) Logger {
+	return func(release func(ct Logger)) Logger {
+		logger := factory(release, level, requests)
 		if field != nil {
-			l.Field(*field).Fixed()
+			logger.Field(*field).Fixed()
 		}
-		list <- l
-	}
-	return p
-}
-
-func (p *Pool) Len() int {
-	return len(p.list)
-}
-
-func (p *Pool) Checkout() Logger {
-	select {
-	case logger := <-p.list:
 		return logger
-	default:
-		atomic.AddUint64(&p.depleted, 1)
-		l := p.factory(nil, p.level, p.requests)
-		if field := p.field; field != nil {
-			l.Field(*field).Fixed()
-		}
-		return l
 	}
 }
 
@@ -96,8 +75,4 @@ func (p *Pool) Request(route string) Logger {
 		return Noop{}
 	}
 	return p.Checkout().Request(route)
-}
-
-func (p *Pool) Depleted() uint64 {
-	return atomic.SwapUint64(&p.depleted, 0)
 }

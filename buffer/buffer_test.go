@@ -230,35 +230,6 @@ func Test_Buffer_Pad(t *testing.T) {
 	assert.Equal(t, len(b.data), 20)
 }
 
-func Test_Buffer_Expanded(t *testing.T) {
-	p := NewPoolFromConfig(Config{Count: 2, Min: 5, Max: 30})
-	b1 := p.Checkout()
-
-	b1.WriteString("12345")
-	assert.Equal(t, p.Expanded(), 0)
-
-	b1.WriteString("6")
-	assert.Equal(t, p.Expanded(), 1)
-
-	// same buffer expanded again doesn't increase expanded
-	b1.WriteString("123456789")
-	assert.Equal(t, p.Expanded(), 1)
-
-	// try again, should count expanded again
-	b1.Release()
-	b1 = p.Checkout()
-
-	b1.WriteString("12345")
-	assert.Equal(t, p.Expanded(), 1)
-
-	b1.WriteString("6")
-	assert.Equal(t, p.Expanded(), 2)
-
-	// same buffer expanded again doesn't increase expanded
-	b1.WriteString("123456789")
-	assert.Equal(t, p.Expanded(), 2)
-}
-
 func testMustString(b *Buffer) string {
 	s, err := b.String()
 	if err != nil {

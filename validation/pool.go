@@ -1,41 +1,29 @@
 package validation
 
-import "sync/atomic"
+import (
+	"src.goblgobl.com/utils/concurrent"
+)
 
 type Pool[T any] struct {
-	list      chan *Context[T]
-	maxErrors uint16
-	depleted  uint64
+	*concurrent.Pool[*Context[T]]
 }
 
-func NewPool[T any](count uint16, maxErrors uint16) *Pool[T] {
-	list := make(chan *Context[T], count)
-	p := &Pool[T]{list: list, maxErrors: maxErrors}
-	for i := uint16(0); i < count; i++ {
+func NewPool[T any](count uint16, maxErrors uint16) Pool[T] {
+	return Pool[T]{
+		Pool: concurrent.NewPool[*Context[T]](uint32(count), pooledContextFactory[T](maxErrors)),
+	}
+}
+
+func pooledContextFactory[T any](maxErrors uint16) func(func(t *Context[T])) *Context[T] {
+	return func(release func(ct *Context[T])) *Context[T] {
 		ctx := NewContext[T](maxErrors)
-		ctx.pool = p
-		list <- ctx
-	}
-	return p
-}
-
-func (p *Pool[T]) Len() int {
-	return len(p.list)
-}
-
-func (p *Pool[T]) Checkout(env T) *Context[T] {
-	select {
-	case ctx := <-p.list:
-		ctx.Env = env
-		return ctx
-	default:
-		atomic.AddUint64(&p.depleted, 1)
-		ctx := NewContext[T](p.maxErrors)
-		ctx.Env = env
+		ctx.release = release
 		return ctx
 	}
 }
 
-func (p *Pool[T]) Depleted() uint64 {
-	return atomic.LoadUint64(&p.depleted)
+func (p Pool[T]) Checkout(env T) *Context[T] {
+	context := p.Pool.Checkout()
+	context.Env = env
+	return context
 }

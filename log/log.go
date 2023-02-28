@@ -16,7 +16,7 @@ func init() {
 	// object early in the startup sequence, but we'll configure a default one
 	// incase it's needed before the app has the chane to configure it (e.g. if the
 	// app fails to read the configuration file)
-	globalPool = NewPool(1, INFO, true, KvFactory(2048), nil)
+	globalPool = NewPool(16, INFO, true, KvFactory(2048), nil)
 }
 
 func Checkout() Logger {

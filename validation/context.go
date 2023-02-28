@@ -8,7 +8,7 @@ import (
 )
 
 type Context[T any] struct {
-	pool *Pool[T]
+	release func(*Context[T])
 
 	// For errors within arrays, we need to create the field name dynamically
 	// (e.g. users.#.name). We'll use this scrap space
@@ -167,11 +167,9 @@ func (c *Context[T]) addInvalid(error any) {
 }
 
 func (c *Context[T]) Release() {
-	if pool := c.pool; pool != nil {
-		var noEnv T
-		c.Env = noEnv
-		c.depth = -1
-		c.errLen = 0
-		c.pool.list <- c
-	}
+	var noEnv T
+	c.Env = noEnv
+	c.depth = -1
+	c.errLen = 0
+	c.release(c)
 }

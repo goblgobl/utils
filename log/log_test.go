@@ -10,7 +10,7 @@ import (
 func Test_Global_Helpers(t *testing.T) {
 	out := &strings.Builder{}
 	err := Configure(Config{
-		PoolSize: 2,
+		PoolSize: 8,
 		Format:   "kv",
 		Level:    "INFO",
 	})

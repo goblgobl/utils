@@ -34,8 +34,7 @@ import (
 var binaryEncoder = base64.RawURLEncoding
 
 type KvLogger struct {
-	// reference back into our pool
-	pool *Pool
+	release func(Logger)
 
 	// buffer that we write our message to
 	buffer []byte
@@ -62,18 +61,18 @@ type KvLogger struct {
 	multiUseLen uint64
 }
 
-func NewKvLogger(maxSize uint32, pool *Pool, level Level, requests bool) *KvLogger {
+func NewKvLogger(maxSize uint32, release func(Logger), level Level, requests bool) *KvLogger {
 	return &KvLogger{
-		pool:     pool,
 		level:    level,
+		release:  release,
 		requests: requests,
 		buffer:   make([]byte, maxSize),
 	}
 }
 
 func KvFactory(maxSize uint32) Factory {
-	return func(pool *Pool, level Level, requests bool) Logger {
-		return NewKvLogger(maxSize, pool, level, requests)
+	return func(release func(Logger), level Level, requests bool) Logger {
+		return NewKvLogger(maxSize, release, level, requests)
 	}
 }
 
@@ -181,8 +180,8 @@ func (l *KvLogger) Reset() {
 
 func (l *KvLogger) Release() {
 	l.pos = l.fixedLen // Reset()
-	if pool := l.pool; pool != nil {
-		pool.list <- l
+	if release := l.release; release != nil {
+		release(l)
 	}
 }
 

@@ -19,17 +19,20 @@ func Test_Configure_InvalidFormat(t *testing.T) {
 func Test_Configure_Defaults(t *testing.T) {
 	err := Configure(Config{})
 	assert.Nil(t, err)
-	assert.Equal(t, len(globalPool.list), 100)
+	// pool is divided into 8 buckets.
+	// 100/8 == 12.5
+	// int(12.5) == 12
+	// 12 * 8 == 96
+	assert.Equal(t, globalPool.Len(), 96)
 
 	l := globalPool.Checkout().(*KvLogger)
 	defer l.Release()
 	assert.Equal(t, len(l.buffer), 4096)
-	assert.Equal(t, l.pool, globalPool)
 }
 
 func Test_Configure_Custom(t *testing.T) {
 	err := Configure(Config{
-		PoolSize: 2,
+		PoolSize: 24,
 		Format:   "kv",
 		Level:    "error",
 		KV:       KvConfig{MaxSize: 100},
@@ -37,7 +40,7 @@ func Test_Configure_Custom(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, globalPool.level, ERROR)
-	assert.Equal(t, len(globalPool.list), 2)
+	assert.Equal(t, globalPool.Len(), 24)
 
 	l := globalPool.Checkout().(*KvLogger)
 	defer l.Release()

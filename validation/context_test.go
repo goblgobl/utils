@@ -81,7 +81,7 @@ func Test_Context_Suspend_And_Resume_Array(t *testing.T) {
 }
 
 func Test_Context_Release(t *testing.T) {
-	p := NewPool[any](1, 3)
+	p := NewPool[any](8, 3)
 	ctx := p.Checkout(nil)
 
 	ctx.InvalidWithField(Required, &Field{Flat: "nf2"})
