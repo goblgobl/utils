@@ -66,3 +66,16 @@ func NewFloat(value float64) Value[float64] {
 func NewString(value string) Value[string] {
 	return New[string](value)
 }
+
+func FromAny[T any](value any) Value[T] {
+	if value == nil {
+		return Null[T]()
+	}
+
+	v, ok := value.(T)
+	if !ok {
+		return Null[T]()
+	}
+
+	return Value[T]{Exists: true, Value: v}
+}

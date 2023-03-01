@@ -84,3 +84,10 @@ func Test_String_Json(t *testing.T) {
 	assert.Nil(t, json.Unmarshal([]byte(`null`), &p2))
 	assert.False(t, p2.Exists)
 }
+
+func Test_FromAny(t *testing.T) {
+	assert.False(t, FromAny[int](nil).Exists)
+	assert.False(t, FromAny[int]("nope").Exists)
+	assert.True(t, FromAny[int](32).Exists)
+	assert.Equal(t, FromAny[int](32).Value, 32)
+}
