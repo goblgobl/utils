@@ -941,3 +941,14 @@ func NumericToInt(value any) (int, bool) {
 	}
 	return 0, false
 }
+
+func Or[T any](raw any, dflt T) T {
+	if raw == nil {
+		return dflt
+	}
+	v, ok := raw.(T)
+	if !ok {
+		return dflt
+	}
+	return v
+}

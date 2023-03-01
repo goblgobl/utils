@@ -647,7 +647,12 @@ func Test_JsonKey(t *testing.T) {
 	defer mustTest(t, "expected { character for map value")
 	typed2 = typed.JsonMust("invalid")
 	assert.Equal(t, len(typed2), 0)
+}
 
+func Test_Or(t *testing.T) {
+	assert.Equal(t, Or[int](nil, 991), 991)
+	assert.Equal(t, Or[int]("nope", 65), 65)
+	assert.Equal(t, Or[int](32, 0), 32)
 }
 
 func build(values ...any) map[string]any {
