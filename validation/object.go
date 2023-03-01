@@ -56,7 +56,8 @@ func (v *ObjectValidator[T]) Validate(raw any, ctx *Context[T]) any {
 }
 
 func (v *ObjectValidator[T]) validate(object map[string]any, ctx *Context[T]) any {
-	ctx.Object = object
+	ctx.StartObject(object)
+	defer ctx.EndObject()
 	for _, vf := range v.fields {
 		field := vf.field
 		ctx.Field = field

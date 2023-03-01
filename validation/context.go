@@ -20,15 +20,13 @@ type Context[T any] struct {
 	// the full user input
 	Input typed.Typed
 
-	// The current object being looked at (this is different than Input for arrays
-	// and nested objects)
-	Object typed.Typed
-
 	// app-specific data that we want to make available to validation callbacks
 	Env T
 
 	// stack of array indexes as we go deeper and deeper into nesting
 	arrayIndexes []int
+
+	objects []typed.Typed
 
 	errors []any
 
@@ -39,13 +37,16 @@ type Context[T any] struct {
 	errLen int
 
 	// how deeply nested we are (only cares about arrays)
-	depth int
+	arrayDepth  int
+	objectDepth int
 }
 
 func NewContext[T any](maxErrors uint16) *Context[T] {
 	return &Context[T]{
-		depth:        -1,
+		arrayDepth:   -1,
+		objectDepth:  -1,
 		arrayIndexes: make([]int, 10),
+		objects:      make([]typed.Typed, 10),
 		errors:       make([]any, maxErrors),
 	}
 }
@@ -56,6 +57,22 @@ func (c *Context[T]) IsValid() bool {
 
 func (c *Context[T]) Errors() []any {
 	return c.errors[:c.errLen]
+}
+
+func (c *Context[T]) Objects() []typed.Typed {
+	d := c.objectDepth
+	if d == -1 {
+		return nil
+	}
+	return c.objects[:d+1]
+}
+
+func (c *Context[T]) CurrentObject() typed.Typed {
+	d := c.objectDepth
+	if d == -1 {
+		return nil
+	}
+	return c.objects[d]
 }
 
 // Directly executes a validator with the given value and for the given field.
@@ -71,19 +88,29 @@ func (c *Context[T]) Validate(field *Field, value any, validator Validator[T]) (
 
 // Arrays can be deeply nested. We keep a stack of values indicating what array
 // index we're currently at, at each level.
-// StartArray adds a new depth to the stack
+// StartArray adds a new arrayDepth to the stack
 func (c *Context[T]) StartArray() {
-	c.depth += 1
+	c.arrayDepth += 1
 }
 
 // Sets the index array for the current array
 func (c *Context[T]) ArrayIndex(i int) {
-	c.arrayIndexes[c.depth] = i
+	c.arrayIndexes[c.arrayDepth] = i
 }
 
 // Removes an array from the stack
 func (c *Context[T]) EndArray() {
-	c.depth -= 1
+	c.arrayDepth -= 1
+}
+
+func (c *Context[T]) StartObject(o typed.Typed) {
+	depth := c.objectDepth + 1
+	c.objects[depth] = o
+	c.objectDepth = depth
+}
+
+func (c *Context[T]) EndObject() {
+	c.objectDepth -= 1
 }
 
 // This is an advanced and very hacky thing. It's generally a "good thing" that
@@ -91,17 +118,17 @@ func (c *Context[T]) EndArray() {
 // This came up because within the process of validating an array, we needed
 // to validate some other data which would not inherit the array index. This
 // call erases the array state of the context. It returns this state (which is
-// just the depth) to the caller, so that the caller can pass it back to ResumeArray
+// just the arrayDepth) to the caller, so that the caller can pass it back to ResumeArray
 // when it's time to go back to the normal valiation
 func (c *Context[T]) SuspendArray() int {
-	depth := c.depth
-	c.depth = -1
-	return depth
+	arrayDepth := c.arrayDepth
+	c.arrayDepth = -1
+	return arrayDepth
 }
 
 // See SuspendArray
-func (c *Context[T]) ResumeArray(depth int) {
-	c.depth = depth
+func (c *Context[T]) ResumeArray(arrayDepth int) {
+	c.arrayDepth = arrayDepth
 }
 
 func (c *Context[T]) InvalidField(invalid *Invalid) {
@@ -109,8 +136,8 @@ func (c *Context[T]) InvalidField(invalid *Invalid) {
 }
 
 func (c *Context[T]) InvalidWithField(invalid *Invalid, field *Field) {
-	depth := c.depth
-	if depth == -1 {
+	arrayDepth := c.arrayDepth
+	if arrayDepth == -1 {
 		// we're not in an array, so the field name isn't dynamic
 		c.addInvalid(InvalidField{Field: field.Flat, Invalid: invalid})
 		return
@@ -130,10 +157,10 @@ func (c *Context[T]) InvalidWithField(invalid *Invalid, field *Field) {
 	indexes := c.arrayIndexes
 	for _, part := range field.Path {
 		if part == "" {
-			if indexIndex > depth {
+			if indexIndex > arrayDepth {
 				// The Path contains the entire label, say ["entries", "", "names", ""]
 				// But sometimes the error is on the array itself, say "entries.3.names".
-				// So we only want to generate this label based on the current depth
+				// So we only want to generate this label based on the current arrayDepth
 				// of the context
 				break
 			}
@@ -169,7 +196,8 @@ func (c *Context[T]) addInvalid(error any) {
 func (c *Context[T]) Release() {
 	var noEnv T
 	c.Env = noEnv
-	c.depth = -1
 	c.errLen = 0
+	c.arrayDepth = -1
+	c.objectDepth = -1
 	c.release(c)
 }

@@ -41,9 +41,19 @@ func Test_Object_Nesting(t *testing.T) {
 }
 
 func Test_Object_Deep_Nesting(t *testing.T) {
+	called := false
 	inner := Object[E]().
 		Required().
-		Field("name", String[E]().Length(4, 0)).
+		Field("name", String[E]().Length(4, 0).Func(func(value string, ctx *Context[E]) any {
+			called = true
+			objects := ctx.Objects()
+			assert.Equal(t, len(objects), 3)
+			assert.True(t, objects[0].Exists("data"))
+			assert.True(t, objects[1].Exists("user"))
+			assert.True(t, objects[2].Exists("name"))
+			assert.True(t, ctx.CurrentObject().Exists("name"))
+			return value
+		})).
 		Field("status", String[E]().Required())
 
 	middle := Object[E]().Field("user", inner).Required()
@@ -55,6 +65,11 @@ func Test_Object_Deep_Nesting(t *testing.T) {
 	testValidator(t, o, "data", map[string]any{}).Field("data.user", Required)
 	testValidator(t, o, "data", map[string]any{"user": 32}).Field("data.user", TypeObject)
 	testValidator(t, o, "data", map[string]any{"user": map[string]any{}}).Field("data.user.status", Required)
+
+	// assert that our ctx.Objects() is working
+	called = false
+	testValidator(t, o, "data", map[string]any{"user": map[string]any{"name": "leto"}})
+	assert.True(t, called)
 }
 
 func testValidator[T any](t *testing.T, validator *ObjectValidator[T], args ...any) *assert.V {
