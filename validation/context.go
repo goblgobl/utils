@@ -55,6 +55,10 @@ func (c *Context[T]) IsValid() bool {
 	return c.errLen == 0
 }
 
+func (c *Context[T]) ErrorCount() int {
+	return c.errLen
+}
+
 func (c *Context[T]) Errors() []any {
 	return c.errors[:c.errLen]
 }

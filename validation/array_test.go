@@ -3,6 +3,7 @@ package validation
 import (
 	"testing"
 
+	"src.goblgobl.com/tests/assert"
 	"src.goblgobl.com/utils/optional"
 	"src.goblgobl.com/utils/typed"
 )
@@ -57,4 +58,30 @@ func Test_Array_MinAndMax(t *testing.T) {
 	testValidator(t, o1, "users", []any{
 		createItem(), createItem(), createItem(),
 	}).FieldsHaveNoErrors("users")
+}
+
+func Test_ConvertToType_Valid(t *testing.T) {
+	o1 := Object[E]().Field(
+		"values", Array[E]().ConvertToType().Validator(String[E]()),
+	)
+	data, _ := testValidatorData(t, o1, "values", []any{"a", "bb"})
+	assert.List(t, data["values"].([]string), []string{"a", "bb"})
+
+	o2 := Object[E]().Field(
+		"values", Array[E]().ConvertToType().Validator(Int[E]()),
+	)
+	data, _ = testValidatorData(t, o2, "values", []any{33, 6668})
+	assert.List(t, data["values"].([]int), []int{33, 6668})
+
+	o3 := Object[E]().Field(
+		"values", Array[E]().ConvertToType().Validator(Bool[E]()),
+	)
+	data, _ = testValidatorData(t, o3, "values", []any{true, true, false})
+	assert.List(t, data["values"].([]bool), []bool{true, true, false})
+
+	o4 := Object[E]().Field(
+		"values", Array[E]().ConvertToType().Validator(Float[E]()),
+	)
+	data, _ = testValidatorData(t, o4, "values", []any{1.2, 21.3})
+	assert.List(t, data["values"].([]float64), []float64{1.2, 21.3})
 }

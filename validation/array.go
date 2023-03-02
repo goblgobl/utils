@@ -17,6 +17,7 @@ type ArrayValidator[T any] struct {
 	minLength     optional.Int
 	maxLength     optional.Int
 	required      bool
+	convertToType bool
 }
 
 func Array[T any]() *ArrayValidator[T] {
@@ -50,6 +51,7 @@ func (v *ArrayValidator[T]) Validate(raw any, ctx *Context[T]) any {
 		return values
 	}
 
+	errorCount := ctx.ErrorCount()
 	validator := v.validator
 	ctx.StartArray()
 	for i, value := range values {
@@ -62,6 +64,42 @@ func (v *ArrayValidator[T]) Validate(raw any, ctx *Context[T]) any {
 		return fn(values, ctx)
 	}
 
+	// Let's only do this if the above validator didn't add any errors
+	if v.convertToType && ctx.ErrorCount() == errorCount {
+		switch validator.(type) {
+		case *StringValidator[T]:
+			t := make([]string, len(values))
+			for i, value := range values {
+				t[i] = value.(string)
+			}
+			return t
+		case *IntValidator[T]:
+			t := make([]int, len(values))
+			for i, value := range values {
+				t[i] = value.(int)
+			}
+			return t
+		case *FloatValidator[T]:
+			t := make([]float64, len(values))
+			for i, value := range values {
+				t[i] = value.(float64)
+			}
+			return t
+		case *BoolValidator[T]:
+			t := make([]bool, len(values))
+			for i, value := range values {
+				t[i] = value.(bool)
+			}
+			return t
+		case *UUIDValidator[T]:
+			t := make([]string, len(values))
+			for i, value := range values {
+				t[i] = value.(string)
+			}
+			return t
+		}
+	}
+
 	return values
 }
 
@@ -72,6 +110,11 @@ func (v *ArrayValidator[T]) Required() *ArrayValidator[T] {
 
 func (v *ArrayValidator[T]) Default(dflt any) *ArrayValidator[T] {
 	v.dflt = dflt
+	return v
+}
+
+func (v *ArrayValidator[T]) ConvertToType() *ArrayValidator[T] {
+	v.convertToType = true
 	return v
 }
 
@@ -121,6 +164,7 @@ func (v *ArrayValidator[T]) nest(field *Field) *ArrayValidator[T] {
 		minLength:     v.minLength,
 		maxLength:     v.maxLength,
 		invalidLength: v.invalidLength,
+		convertToType: v.convertToType,
 		// When we add a validation error, empty strings will be replaced
 		// by the current array index. It's handeld in context.go
 		validator: inner.nest(field),
