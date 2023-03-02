@@ -21,6 +21,15 @@ type Field struct {
 
 func (f *Field) nest(parent *Field) *Field {
 	path := append(parent.Path, f.Name)
+
+	// If this was an array field (where the last path value was an empty (placeholder))
+	// then it should remain so. This is necessary because of the ForceField function
+	// which is forces a specific field path without being aware of being forced
+	// into an array field.
+	if f.Path[len(f.Path)-1] == "" {
+		path = append(path, "")
+	}
+
 	return &Field{
 		// the name doesnt' change, the name is always the outer part
 		Name: f.Name,
