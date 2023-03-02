@@ -3,7 +3,7 @@ package utils
 const (
 	VAL_REQUIRED           = 1001
 	VAL_STRING_TYPE        = 1002
-	VAL_STRING_LEN         = 1003
+	VAL_STRING_LENGTH      = 1003
 	VAL_STRING_PATTERN     = 1004
 	VAL_INT_TYPE           = 1005
 	VAL_INT_MIN            = 1006

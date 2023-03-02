@@ -183,7 +183,7 @@ func InvalidStringLength(min int, max int) *Invalid {
 
 	if hasMin && hasMax {
 		return &Invalid{
-			Code:  utils.VAL_STRING_LEN,
+			Code:  utils.VAL_STRING_LENGTH,
 			Error: fmt.Sprintf("must be between %d and %d characters", min, max),
 			Data:  RangeData(min, max),
 		}
@@ -195,7 +195,7 @@ func InvalidStringLength(min int, max int) *Invalid {
 			c = "character"
 		}
 		return &Invalid{
-			Code:  utils.VAL_STRING_LEN,
+			Code:  utils.VAL_STRING_LENGTH,
 			Error: fmt.Sprintf("must be atleast %d %s", min, c),
 			Data:  MinData(min),
 		}
@@ -206,7 +206,7 @@ func InvalidStringLength(min int, max int) *Invalid {
 		c = "character"
 	}
 	return &Invalid{
-		Code:  utils.VAL_STRING_LEN,
+		Code:  utils.VAL_STRING_LENGTH,
 		Error: fmt.Sprintf("must be no more than %d %s", max, c),
 		Data:  MaxData(max),
 	}
