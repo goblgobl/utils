@@ -1,18 +1,20 @@
 module src.goblgobl.com/utils
 
-go 1.20
+go 1.21
 
-replace src.goblgobl.com/tests => ../tests
+toolchain go1.21.1
+
+// replace src.goblgobl.com/tests => ../tests
 
 require (
-	github.com/goccy/go-json v0.10.0
-	github.com/google/uuid v1.3.0
+	github.com/goccy/go-json v0.10.2
+	github.com/google/uuid v1.3.1
 	github.com/jackc/pgx/v5 v5.1.1
 	github.com/valyala/fasthttp v1.43.0
 	golang.org/x/crypto v0.3.0
 	golang.org/x/sync v0.1.0
 	src.goblgobl.com/sqlite v0.0.4
-	src.goblgobl.com/tests v0.0.7
+	src.goblgobl.com/tests v0.0.8
 )
 
 require (
