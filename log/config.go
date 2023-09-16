@@ -44,7 +44,7 @@ func Configure(config Config) error {
 	case "", "KV":
 		maxSize := config.KV.MaxSize
 		if maxSize == 0 {
-			maxSize = 4096
+			maxSize = 131072 // 128KB
 		}
 		factory = KvFactory(maxSize)
 		formatName = "KV" // reset this incase it was empty
