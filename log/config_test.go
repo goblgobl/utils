@@ -27,7 +27,7 @@ func Test_Configure_Defaults(t *testing.T) {
 
 	l := globalPool.Checkout().(*KvLogger)
 	defer l.Release()
-	assert.Equal(t, len(l.buffer), 4096)
+	assert.Equal(t, l.buffer.Max(), 4096)
 }
 
 func Test_Configure_Custom(t *testing.T) {
@@ -44,7 +44,7 @@ func Test_Configure_Custom(t *testing.T) {
 
 	l := globalPool.Checkout().(*KvLogger)
 	defer l.Release()
-	assert.Equal(t, len(l.buffer), 100)
+	assert.Equal(t, l.buffer.Max(), 100)
 
 	levels := map[string]Level{
 		"infO":  INFO,

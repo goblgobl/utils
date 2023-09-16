@@ -169,10 +169,10 @@ func Test_KvLogger_UnencodedLenghts(t *testing.T) {
 	l.Info("ctx2").String("ab", "1234").LogTo(out)
 	assertKvLog(t, out, false, map[string]string{"ab": "1234"})
 
-	l.Info("ctx1").String("a", "123456").LogTo(out)
+	l.Info("ctx1").String("a", "1234567").LogTo(out)
 	assertNoField(t, out, "a")
 
-	l.Info("ctx1").String("ab", "12345").LogTo(out)
+	l.Info("ctx1").String("ab", "123456").LogTo(out)
 	assertNoField(t, out, "ab")
 }
 
@@ -193,11 +193,11 @@ func Test_KvLogger_EncodedLenghts(t *testing.T) {
 	l.Info("ctx1").String("a", "1\"bc").LogTo(out)
 	assertKvLog(t, out, false, map[string]string{"a": `"1\"bc"`})
 
-	l.Info("ctx1").String("a", "1\"bcd").LogTo(out)
-	assertKvLog(t, out, false, map[string]string{"a": `"1\"bc..."`})
+	l.Info("ctx1").String("a", "1\"bcdef").LogTo(out)
+	assertKvLog(t, out, false, map[string]string{"a": `"1\"bcdef"`})
 
-	l.Info("ctx1").String("a", "1\"bcde").LogTo(out)
-	assertKvLog(t, out, false, map[string]string{"a": `"1\"bc..."`})
+	l.Info("ctx1").String("a", "1\"bcdefg").LogTo(out)
+	assertNoField(t, out, "a")
 
 	l.Info("ctx1").String("ab", "\"").LogTo(out)
 	assertKvLog(t, out, false, map[string]string{"ab": `"\""`})
@@ -208,11 +208,11 @@ func Test_KvLogger_EncodedLenghts(t *testing.T) {
 	l.Info("ctx1").String("ab", "1\"b").LogTo(out)
 	assertKvLog(t, out, false, map[string]string{"ab": `"1\"b"`})
 
-	l.Info("ctx1").String("ab", "1\"bc").LogTo(out)
-	assertKvLog(t, out, false, map[string]string{"ab": `"1\"b..."`})
+	l.Info("ctx1").String("ab", "1\"bcde").LogTo(out)
+	assertKvLog(t, out, false, map[string]string{"ab": `"1\"bcde"`})
 
-	l.Info("ctx1").String("ab", "1\"bcd").LogTo(out)
-	assertKvLog(t, out, false, map[string]string{"ab": `"1\"b..."`})
+	l.Info("ctx1").String("ab", "1\"bcdef").LogTo(out)
+	assertNoField(t, out, "ab")
 }
 
 func Test_KvLogger_Fixed(t *testing.T) {

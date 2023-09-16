@@ -5,7 +5,6 @@ import (
 	"io"
 
 	"src.goblgobl.com/utils"
-	"src.goblgobl.com/utils/log"
 )
 
 /*
@@ -26,7 +25,7 @@ pre-allocated minimal buffer is restored.
 */
 
 var (
-	ErrMaxSize = errors.New("buffer maximum size")
+	ErrMaxSize = errors.New("code: 3005 - buffer maximum size")
 	Empty      = new(Buffer)
 )
 
@@ -130,12 +129,16 @@ func (b Buffer) Bytes() ([]byte, error) {
 	return b.data[:b.pos], b.err
 }
 
+func (b Buffer) OKBytes() []byte {
+	return b.data[:b.pos]
+}
+
 // An advanced function. Some code might want to manipulate a []byte directly
 // while leveraging the pre-allocated nature of a pooled buffer. Importantly,
 // the returned bytes are not cleared
 func (b Buffer) TakeBytes(l int) ([]byte, error) {
 	b.Reset()
-	b.ensureCapacity(l)
+	b.EnsureCapacity(l)
 	return b.data[:l], b.err
 }
 
@@ -148,7 +151,7 @@ func (b Buffer) SqliteBytes() ([]byte, error) {
 
 // ensure that we have enough space for padSize
 func (b *Buffer) Pad(padSize int) error {
-	if !b.ensureCapacity(padSize) {
+	if !b.EnsureCapacity(padSize) {
 		return b.err
 	}
 	return nil
@@ -157,7 +160,7 @@ func (b *Buffer) Pad(padSize int) error {
 // Write and ensure enough capacity for len(data) + padSize
 // Meant to be used with WriteByteUnsafe.
 func (b *Buffer) WritePad(data []byte, padSize int) (int, error) {
-	if !b.ensureCapacity(len(data) + padSize) {
+	if !b.EnsureCapacity(len(data) + padSize) {
 		return 0, b.err
 	}
 
@@ -173,19 +176,15 @@ func (b *Buffer) Write(data []byte) (int, error) {
 	return b.WritePad(data, 0)
 }
 
-func (b *Buffer) WriteUnsafe(data string) {
-	b.Write(utils.S2B(data))
-}
-
 func (b *Buffer) WriteString(data string) {
-	b.Write([]byte(data))
+	b.Write(utils.S2B(data))
 }
 
 func (b *Buffer) WriteByte(byte byte) {
 	if b.err != nil {
 		return
 	}
-	if !b.ensureCapacity(1) {
+	if !b.EnsureCapacity(1) {
 		return
 	}
 
@@ -204,6 +203,27 @@ func (b *Buffer) WriteByteUnsafe(byte byte) {
 
 func (b *Buffer) Truncate(n int) {
 	b.pos -= n
+}
+
+func (b *Buffer) Seek(offset int64, whence int) (int64, error) {
+	var target int64
+	switch whence {
+	case io.SeekStart:
+		target = offset
+	case io.SeekCurrent:
+		target = int64(b.pos) + offset
+	case io.SeekEnd:
+		target = int64(len(b.data)) + offset
+	}
+
+	if target < 0 {
+		return int64(b.pos), errors.New("Seek before start")
+	}
+	if target > int64(len(b.data)) {
+		return int64(b.pos), errors.New("Seek after end")
+	}
+	b.pos = int(target)
+	return target, nil
 }
 
 // io.Reader
@@ -227,7 +247,7 @@ func (b *Buffer) Read(p []byte) (int, error) {
 	return n, nil
 }
 
-func (b *Buffer) ensureCapacity(l int) bool {
+func (b *Buffer) EnsureCapacity(l int) bool {
 	if b.err != nil {
 		return false
 	}
@@ -237,7 +257,7 @@ func (b *Buffer) ensureCapacity(l int) bool {
 
 	max := b.max
 	if required > max {
-		b.err = log.ErrData(utils.ERR_BUFFER_CAPACITY_MAX, ErrMaxSize, map[string]any{"max": max, "req": required})
+		b.err = ErrMaxSize
 		return false
 	}
 

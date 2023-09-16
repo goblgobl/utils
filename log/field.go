@@ -3,6 +3,8 @@ package log
 import (
 	"fmt"
 	"strconv"
+
+	"src.goblgobl.com/utils/buffer"
 )
 
 /*
@@ -40,17 +42,16 @@ func (f *Field) String(key string, value string) *Field {
 	return f
 }
 
-// just return Field so that it can be used in chaining
+// return Field so that it can be used in chaining
 func (f *Field) Finalize() Field {
-	pos := uint64(0)
-	buffer := make([]byte, 1024)
+	buffer := buffer.New(1024, 4096)
 
 	for key, value := range f.fields {
 		switch v := value.(type) {
 		case int:
-			pos = writeKeyValue(key, strconv.FormatInt(int64(v), 10), pos, buffer)
+			writeKeyValue(key, strconv.FormatInt(int64(v), 10), buffer)
 		case string:
-			pos = writeKeyValue(key, v, pos, buffer)
+			writeKeyValue(key, v, buffer)
 		default:
 			panic(fmt.Sprintf("unsupport field value type: %T (%v)", value, value))
 		}
@@ -59,8 +60,9 @@ func (f *Field) Finalize() Field {
 	// We expect fields to be created on startup and be long-lived
 	// we should trim out kv data to the exact size to avoid
 	// wasting space
-	kv := make([]byte, pos)
-	copy(kv, buffer)
+	kv := make([]byte, buffer.Len())
+	bytes, _ := buffer.Bytes()
+	copy(kv, bytes)
 	f.kv = kv
 
 	return *f

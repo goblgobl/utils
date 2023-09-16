@@ -29,6 +29,9 @@ import (
 	"io"
 	"strconv"
 	"time"
+
+	"src.goblgobl.com/utils"
+	"src.goblgobl.com/utils/buffer"
 )
 
 var binaryEncoder = base64.RawURLEncoding
@@ -37,7 +40,7 @@ type KvLogger struct {
 	release func(Logger)
 
 	// buffer that we write our message to
-	buffer []byte
+	buffer *buffer.Buffer
 
 	// The log level that we're logging.
 	level Level
@@ -45,14 +48,11 @@ type KvLogger struct {
 	// Whether or not we're logging request messages
 	requests bool
 
-	// the position in buffer to write to next
-	pos uint64
-
 	// A logger can have a fixed piece of data which is
 	// always included (e.g pid=$PROJECT_ID for a project-owned
 	// logger). Once our fixed data is set, pos will never be
 	// less than fixedLen.
-	fixedLen uint64
+	fixedLen int64
 
 	// A logger can also have temporary repeated data
 	// (e.g. rid=$REQUEST_ID for an env-owned logger).
@@ -66,7 +66,7 @@ func NewKvLogger(maxSize uint32, release func(Logger), level Level, requests boo
 		level:    level,
 		release:  release,
 		requests: requests,
-		buffer:   make([]byte, maxSize),
+		buffer:   buffer.New(4096, maxSize),
 	}
 }
 
@@ -79,19 +79,19 @@ func KvFactory(maxSize uint32) Factory {
 // Get the bytes from the logger. This is only valid before Log is called (after
 // log is called, you'll get an empty slice). Only really useful for testing.
 func (l *KvLogger) Bytes() []byte {
-	return l.buffer[:l.pos]
+	return l.buffer.OKBytes()
 }
 
 // Logger will _always_ include this data. Meant to be used with the Field builder.
 // Even once released to the pool and re-checked out, this data will still be in the logger.
 // For checkout-specific data, see MultiUse().
 func (l *KvLogger) Fixed() {
-	l.fixedLen = l.pos
+	l.fixedLen = int64(l.buffer.Len())
 }
 
 // Similar to Fixed, but exists only while checked out
 func (l *KvLogger) MultiUse() Logger {
-	l.multiUseLen = l.pos
+	l.multiUseLen = uint64(l.buffer.Len())
 	return l
 }
 
@@ -103,9 +103,10 @@ func (l *KvLogger) String(key string, value string) Logger {
 
 func (l *KvLogger) Binary(key string, value []byte) Logger {
 	len := binaryEncoder.EncodedLen(len(value))
-	if pos, ok := l.writeKeyFor(key, len); ok {
-		binaryEncoder.Encode(l.buffer[pos:], value)
-		l.pos += uint64(len)
+	if l.writeKeyForValueLen(key, len) {
+		enc := base64.NewEncoder(binaryEncoder, l.buffer)
+		enc.Write(value)
+		enc.Close()
 	}
 	return l
 }
@@ -118,21 +119,20 @@ func (l *KvLogger) Int(key string, value int) Logger {
 // Add a field (key=value) where value is an int
 func (l *KvLogger) Int64(key string, value int64) Logger {
 	s := strconv.FormatInt(value, 10)
-	if pos, ok := l.writeKeyFor(key, len(s)); ok {
-		l.pos += uint64(copy(l.buffer[pos:], s))
+	if l.writeKeyForValue(key, s) {
+		l.buffer.WriteString(s)
 	}
 	return l
 }
 
 // Add a field (key=value) where value is a boolean
 func (l *KvLogger) Bool(key string, value bool) Logger {
-	if pos, ok := l.writeKeyFor(key, 1); ok {
+	if l.writeKeyForValueLen(key, 1) {
 		if value {
-			l.buffer[pos] = 'Y'
+			l.buffer.WriteByte('Y')
 		} else {
-			l.buffer[pos] = 'N'
+			l.buffer.WriteByte('N')
 		}
-		l.pos += 1
 	}
 	return l
 }
@@ -164,22 +164,20 @@ func (l *KvLogger) Log() {
 }
 
 func (l *KvLogger) LogTo(out io.Writer) {
-	pos := l.pos
 	buffer := l.buffer
 
-	// no length check, if we did everything right, there should
-	// always be at least 1 space in our buffer
-	buffer[pos] = '\n'
-	out.Write(buffer[:pos+1])
+	buffer.WriteByte('\n')
+	out.Write(buffer.OKBytes())
 	l.conditionalRelease()
 }
 
 func (l *KvLogger) Reset() {
-	l.pos = l.fixedLen
+	l.buffer.Seek(l.fixedLen, io.SeekStart)
 }
 
 func (l *KvLogger) Release() {
-	l.pos = l.fixedLen // Reset()
+	l.buffer.Reset()
+	l.buffer.Seek(l.fixedLen, io.SeekStart)
 	if release := l.release; release != nil {
 		release(l)
 	}
@@ -190,6 +188,9 @@ func (l *KvLogger) Release() {
 func (l *KvLogger) conditionalRelease() {
 	if l.multiUseLen == 0 {
 		l.Release()
+	} else {
+		// remove out trailing newline
+		l.buffer.Truncate(1)
 	}
 }
 
@@ -239,139 +240,107 @@ func (l *KvLogger) Request(route string) Logger {
 }
 
 func (l *KvLogger) Field(field Field) Logger {
-	pos := l.pos
 	buffer := l.buffer
-	bl := uint64(len(buffer))
 
 	// might already have data
-	if pos != 0 && pos < bl {
-		buffer[pos] = ' '
-		pos += 1
+	if buffer.Len() != 0 {
+		buffer.WriteByte(' ')
 	}
-
-	if pos < uint64(len(buffer)) {
-		data := field.kv
-		copy(buffer[pos:], data)
-		l.pos = pos + uint64(len(data))
-	}
+	buffer.Write(field.kv)
 	return l
 }
 
 // "starts" a new log message. Every message always contains a timestamp (t) a
 // context (c) and a level (l).
 func (l *KvLogger) start(ctx string, meta []byte) Logger {
-	pos := l.pos
 	buffer := l.buffer
 
-	bl := uint64(len(buffer))
-
-	// pos > 0 when MultiUse is enabled
-	if pos > 0 && pos < bl {
-		buffer[pos] = ' '
-		pos = pos + 1
+	// len > 0 when MultiUse is enabled
+	if buffer.Len() > 0 {
+		buffer.WriteByte(' ')
 	}
 
-	copy(buffer[pos:], meta)
-	pos += uint64(len(meta))
-
-	t := strconv.FormatInt(time.Now().Unix(), 10)
-	copy(buffer[pos:], t)
-	pos += uint64(len(t))
-
-	// we always expect the ctx to be safe and to outlive this log
-	copy(buffer[pos:], []byte(" _c="))
-	pos += 4
-
-	copy(buffer[pos:], ctx)
-	pos += uint64(len(ctx))
-
-	l.pos = pos
+	// includes the log level + the _t= key (but not the timestamp itself)
+	buffer.Write(meta)
+	buffer.WriteString(strconv.FormatInt(time.Now().Unix(), 10))
+	buffer.WriteString(" _c=")
+	buffer.WriteString(ctx)
 	return l
 }
 
-func (l *KvLogger) writeKeyValue(key string, value string) {
-	l.pos = writeKeyValue(key, value, l.pos, l.buffer)
-}
-
-func (l *KvLogger) writeKeyFor(key string, valueLen int) (uint64, bool) {
-	pos, ok := writeKeyForValue(key, valueLen, l.pos, l.buffer)
-	l.pos = pos
-	return pos, ok
+// Writes "$key=" and returns the position where the value can be written.
+func (l *KvLogger) writeKeyForValue(key string, value string) bool {
+	return l.writeKeyForValueLen(key, len(value))
 }
 
 // We expect key to always be safe to write as-is.
+func (l *KvLogger) writeKeyForValueLen(key string, valueLen int) bool {
+	return writeKeyForValueLen(key, valueLen, l.buffer)
+}
+
 // We only encode newline and quotes. If either is present, the value is quote encoded.
-func writeKeyValue(key string, value string, pos uint64, buffer []byte) uint64 {
-	pos, haveSpace := writeKeyForValue(key, len(value), pos, buffer)
-	if !haveSpace {
-		return pos
+func (l *KvLogger) writeKeyValue(key string, value string) {
+	writeKeyValue(key, value, l.buffer)
+}
+
+func writeKeyForValueLen(key string, valueLen int, buffer *buffer.Buffer) bool {
+	// + 3 for space & equal & final newline
+	if buffer.EnsureCapacity(len(key)+valueLen+3) == false {
+		return false
 	}
 
-	if !requiresEscape(value) {
-		copy(buffer[pos:], value)
-		return pos + uint64(len(value))
+	if buffer.Len() > 0 {
+		buffer.WriteByte(' ')
 	}
 
-	buffer[pos] = '"'
-	pos += 1
-	bl := uint64(len(buffer))
+	buffer.WriteString(key)
+	buffer.WriteByte('=')
+	return true
+}
 
-	// -2 because we need enough space for our quote and final newline
-	var i int
-	for ; i < len(value) && pos < bl-5; i++ {
-		c := value[i]
+func writeKeyValue(key string, value string, buffer *buffer.Buffer) {
+	escapeCount := escapeCount(value)
+
+	spaceRequiredForValue := len(value)
+	if escapeCount > 0 {
+		// +2 because we need to wrap the entire thing in double quotes
+		spaceRequiredForValue += escapeCount + 2
+	}
+
+	if writeKeyForValueLen(key, spaceRequiredForValue, buffer) == false {
+		return
+	}
+
+	if escapeCount == 0 {
+		buffer.WriteString(value)
+		return
+	}
+
+	buffer.WriteByteUnsafe('"')
+
+	for _, c := range utils.S2B(value) {
 		switch c {
 		case '\n':
-			buffer[pos] = '\\'
-			buffer[pos+1] = 'n'
-			pos += 2
+			buffer.WriteByteUnsafe('\\')
+			buffer.WriteByteUnsafe('n')
 		case '"':
-			buffer[pos] = '\\'
-			buffer[pos+1] = '"'
-			pos += 2
+			buffer.WriteByteUnsafe('\\')
+			buffer.WriteByteUnsafe('"')
 		default:
-			buffer[pos] = c
-			pos += 1
+			buffer.WriteByteUnsafe(c)
 		}
 	}
 
-	if pos == bl-5 && i < len(value) {
-		copy(buffer[pos:], "...")
-		pos += 3
-	}
-
-	buffer[pos] = '"'
-	return pos + 1
+	buffer.WriteByteUnsafe('"')
 }
 
-// Writes "$key=" and returns the position where the value can be written.
-func writeKeyForValue(key string, valueLen int, pos uint64, buffer []byte) (uint64, bool) {
-	bl := uint64(len(buffer))
-	// Need at least enough room for:
-	// space sperator + equal separator + trailing newline
-	// + our key + our value
-	if bl-pos < uint64(len(key)+valueLen)+3 {
-		return pos, false
-	}
-
-	if pos > 0 {
-		buffer[pos] = ' '
-		pos += 1
-	}
-
-	copy(buffer[pos:], key)
-	pos += uint64(len(key))
-
-	buffer[pos] = '='
-	return pos + 1, true
-}
-
-func requiresEscape(input string) bool {
+func escapeCount(input string) int {
+	count := 0
 	for i := 0; i < len(input); i++ {
 		c := input[i]
 		if c == '=' || c == '"' || c == '\n' || c == ' ' {
-			return true
+			count += 1
 		}
 	}
-	return false
+	return count
 }
