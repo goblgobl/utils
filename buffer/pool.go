@@ -4,6 +4,12 @@ import (
 	"src.goblgobl.com/utils/concurrent"
 )
 
+type Config struct {
+	Count uint16 `json:"count"`
+	Min   uint32 `json:"min"`
+	Max   uint32 `json:"max"`
+}
+
 type Pool struct {
 	*concurrent.Pool[*Buffer]
 	maxSize uint32
