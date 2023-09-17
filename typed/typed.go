@@ -39,6 +39,31 @@ func Json(data []byte) (Typed, error) {
 	return Typed(m), nil
 }
 
+// Create an array of Typed helpers
+// Used for when the root is an array which contains objects
+func JsonArray(data []byte) ([]Typed, error) {
+	var m []interface{}
+	if err := json.Unmarshal(data, &m); err != nil {
+		return nil, err
+	}
+
+	l := len(m)
+	if l == 0 {
+		return nil, nil
+	}
+
+	typed := make([]Typed, l)
+	for i := 0; i < l; i++ {
+		value := m[i]
+		if t, ok := value.(map[string]interface{}); ok {
+			typed[i] = t
+		} else {
+			typed[i] = map[string]interface{}{"0": value}
+		}
+	}
+	return typed, nil
+}
+
 // Create a Typed helper from the given JSON bytes, panics on error
 func Must(data []byte) Typed {
 	m, err := Json(data)
