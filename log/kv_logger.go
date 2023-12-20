@@ -189,7 +189,7 @@ func (l *KvLogger) conditionalRelease() {
 	if l.multiUseLen == 0 {
 		l.Release()
 	} else {
-		// remove out trailing newline
+		// remove our trailing newline
 		l.buffer.Truncate(1)
 	}
 }
