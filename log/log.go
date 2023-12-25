@@ -43,6 +43,10 @@ func Request(route string) Logger {
 	return globalPool.Request(route)
 }
 
+func Detach() Logger {
+	return globalPool.Detach()
+}
+
 type Logger interface {
 	// Actually log the data to the configured output
 	// If the logger was not configured for MultiUse, this

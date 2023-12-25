@@ -23,3 +23,9 @@ func Test_Atoi(t *testing.T) {
 		assert.Equal(t, e2, "-suffix")
 	}
 }
+
+func Test_Atoi_Error(t *testing.T) {
+	n, s := Atoi(string([]byte{0, 1, 2, 3}))
+	assert.Equal(t, n, 0)
+	assert.Bytes(t, []byte(s), []byte{0, 1, 2, 3})
+}

@@ -105,5 +105,4 @@ func Test_Pool_Request(t *testing.T) {
 	l1 = p.Request("route2").String("a", "b")
 	l1.LogTo(out)
 	assertKvLog(t, out, true, nil)
-
 }

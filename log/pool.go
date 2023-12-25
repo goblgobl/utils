@@ -21,6 +21,7 @@ type Pool struct {
 	field    *Field
 	level    Level
 	requests bool
+	factory  Factory
 }
 
 func NewPool(count uint16, level Level, requests bool, factory Factory, field *Field) *Pool {
@@ -28,6 +29,7 @@ func NewPool(count uint16, level Level, requests bool, factory Factory, field *F
 		level:    level,
 		field:    field,
 		requests: requests,
+		factory:  factory,
 		Pool:     concurrent.NewPool[Logger](uint32(count), pooledLoggerFactory(factory, level, requests, field)),
 	}
 }
@@ -40,6 +42,11 @@ func pooledLoggerFactory(factory Factory, level Level, requests bool, field *Fie
 		}
 		return logger
 	}
+}
+
+// Creates a Logger detached from the pool (but using the pool's configuration)
+func (p *Pool) Detach() Logger {
+	return p.factory(nil, p.level, p.requests)
 }
 
 func (p *Pool) Info(ctx string) Logger {
