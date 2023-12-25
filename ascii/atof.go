@@ -23,10 +23,9 @@ func Atof(input string) (float64, string) {
 	}
 
 	end := i - 1
-	if dot == false {
+	if end == len(input)-1 {
 		end = i
 	}
-
 	flt, err := strconv.ParseFloat(input[:end], 64)
 	if err != nil {
 		return 0, input

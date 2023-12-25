@@ -18,6 +18,10 @@ func Test_Atof(t *testing.T) {
 	assert.Equal(t, f, 2)
 	assert.Equal(t, s, "")
 
+	f, s = Atof("455 MB")
+	assert.Equal(t, f, 455)
+	assert.Equal(t, s, " MB")
+
 	for i := 0; i < 100; i++ {
 		actual := rand.Float64() * math.Pow10(rand.Intn(10))
 		f, s = Atof(strconv.FormatFloat(actual, 'f', 15, 64))
