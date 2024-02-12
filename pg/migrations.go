@@ -11,6 +11,7 @@ import (
 type Migrate func(tx pgx.Tx) error
 
 type Migration struct {
+	SQL     string
 	Migrate Migrate
 	Version uint16
 }
@@ -29,7 +30,11 @@ func MigrateAll(db DB, appName string, migrations []Migration) error {
 		}
 
 		err := db.Transaction(func(tx pgx.Tx) error {
-			if err := migration.Migrate(tx); err != nil {
+			if sql := migration.SQL; sql != "" {
+				if _, err := tx.Exec(context.Background(), sql); err != nil {
+					return fmt.Errorf("Failed to run pg migration #%d - %w", version, err)
+				}
+			} else if err := migration.Migrate(tx); err != nil {
 				return fmt.Errorf("Failed to run pg migration #%d - %w", version, err)
 			}
 
