@@ -32,7 +32,7 @@ func MigrateAll(conn Conn, migrations []Migration) error {
 			}
 
 			return conn.Exec(`
-				insert into goblgobl_migrations (version) values (?1)
+				insert into migrations (version) values (?1)
 			`, version)
 		})
 
@@ -48,14 +48,14 @@ func MigrateAll(conn Conn, migrations []Migration) error {
 }
 
 func GetCurrentMigrationVersion(conn Conn) (int, error) {
-	exists, err := conn.TableExists("goblgobl_migrations")
+	exists, err := conn.TableExists("migrations")
 	if err != nil {
 		return 0, err
 	}
 
 	if !exists {
 		return 0, conn.Exec(`
-			create table goblgobl_migrations (
+			create table migrations (
 				version integer not null
 			)
 		`)
@@ -63,6 +63,6 @@ func GetCurrentMigrationVersion(conn Conn) (int, error) {
 
 	return Scalar[int](conn, `
 		select max(version)
-		from goblgobl_migrations
+		from migrations
 	`)
 }
