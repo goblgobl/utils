@@ -935,6 +935,36 @@ func (t Typed) JsonMust(key string) Typed {
 	return t
 }
 
+func (t Typed) ToBytes(key ...string) ([]byte, error) {
+	var o any
+	if len(key) == 0 {
+		o = t
+	} else {
+		exists := false
+		o, exists = t[key[0]]
+		if exists == false {
+			return nil, KeyNotFound
+		}
+	}
+
+	if o == nil {
+		return nil, nil
+	}
+	data, err := json.Marshal(o)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+func (t Typed) MustBytes(key string) []byte {
+	data, err := t.ToBytes(key)
+	if err != nil {
+		panic(err)
+	}
+	return data
+}
+
 func (t Typed) getmap(key string) (raw map[string]any, exists bool) {
 	value, exists := t[key]
 	if exists == false {
