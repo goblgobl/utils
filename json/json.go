@@ -28,3 +28,7 @@ func Unmarshal(data []byte, into any) error {
 func MarshalInto(data any, w io.Writer) error {
 	return json.NewEncoder(w).EncodeWithOption(data, json.UnorderedMap())
 }
+
+func NewDecoder(r io.Reader) *json.Decoder {
+	return json.NewDecoder(r)
+}
